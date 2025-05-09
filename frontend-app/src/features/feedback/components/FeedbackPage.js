@@ -1,0 +1,235 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import Box from "@mui/material/Box";
+import Container from "@mui/material/Container";
+import Typography from "@mui/material/Typography";
+import Button from "@mui/material/Button";
+import Stack from "@mui/material/Stack";
+import StyledTextArea from "../../../shared/ui/StyledTextArea";
+import TelegramIcon from "@mui/icons-material/Telegram";
+import EmailIcon from "@mui/icons-material/Email";
+import PhoneIcon from "@mui/icons-material/Phone";
+import { styled } from "@mui/material/styles";
+import { createFeedback } from "../../../app/api/feedbackAPI";
+import PhoneMaskInput from "../../../shared/libs/PhoneMaskInput";
+import { CTA } from "../../../shared/ui/cta";
+
+const FormContainer = styled(Box)(({ theme }) => ({
+    backgroundColor: theme.palette.background.paper,
+    borderRadius: theme.shape.borderRadius,
+    padding: theme.spacing(4),
+    boxShadow: theme.shadows[2],
+    marginTop: theme.spacing(4),
+}));
+
+export default function FeedbackPage() {
+    const navigate = useNavigate();
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const [formData, setFormData] = useState({
+        name: "",
+        email: "",
+        phone: "",
+        message: "",
+    });
+
+    const handleChange = (e) => {
+        const { name, value } = e.target;
+        setFormData((prev) => ({ ...prev, [name]: value }));
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (isSubmitting) return;
+        setIsSubmitting(true);
+        setFormData({
+            name: "",
+            email: "",
+            phone: "",
+            message: "",
+        });
+        try {
+            const createdFeedback = await createFeedback(formData);
+            return createdFeedback;
+        } catch (error) {
+            console.error(error.response?.data?.message || "Ошибка отправки");
+        } finally {
+            setIsSubmitting(false);
+            navigate("/");
+        }
+    };
+
+    return (
+        <Box
+            sx={{
+                width: "100%",
+                backgroundRepeat: "no-repeat",
+                backgroundImage:
+                    "radial-gradient(ellipse 80% 50% at 50% -20%, hsl(210, 100%, 90%), transparent)",
+                pt: { xs: 4, sm: 8 },
+                pb: { xs: 8, sm: 8 },
+            }}
+        >
+            <Container maxWidth="md">
+                <Typography
+                    variant="h2"
+                    sx={{
+                        textAlign: "center",
+                        mb: 2,
+                        display: "flex",
+                        flexDirection: { xs: "column", sm: "row" },
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 2,
+                    }}
+                >
+                    Обратная
+                    <Typography
+                        component="span"
+                        variant="h2"
+                        color="primary"
+                        sx={{ fontWeight: "bold" }}
+                    >
+                        связь
+                    </Typography>
+                </Typography>
+
+                <Typography
+                    variant="body1"
+                    color="text.secondary"
+                    sx={{
+                        textAlign: "center",
+                        mb: 4,
+                        maxWidth: 600,
+                        mx: "auto",
+                    }}
+                >
+                    Задайте вопрос, оставьте предложение или сообщите о
+                    проблеме. Мы ответим вам в ближайшее время.
+                </Typography>
+
+                <Stack direction={{ xs: "column", md: "row" }} spacing={4}>
+                    {/* Форма обратной связи */}
+                    <FormContainer sx={{ flex: 2 }}>
+                        <form onSubmit={handleSubmit}>
+                            <Stack spacing={3}>
+                                <StyledTextArea
+                                    name="name"
+                                    label="Ваше имя"
+                                    variant="outlined"
+                                    fullWidth
+                                    value={formData.name}
+                                    onChange={handleChange}
+                                    required
+                                />
+
+                                <StyledTextArea
+                                    label="Email"
+                                    variant="outlined"
+                                    fullWidth
+                                    value={formData.email}
+                                    onChange={handleChange}
+                                    name="email"
+                                    InputProps={{
+                                        inputProps: {
+                                            pattern:
+                                                "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$",
+                                            type: "email",
+                                        },
+                                    }}
+                                    required
+                                />
+
+                                <StyledTextArea
+                                    name="phone"
+                                    label="Телефон"
+                                    variant="outlined"
+                                    inputMode="tel"
+                                    type="tel"
+                                    fullWidth
+                                    value={formData.phone}
+                                    onChange={handleChange}
+                                    InputProps={{
+                                        inputComponent: PhoneMaskInput,
+                                    }}
+                                />
+
+                                <StyledTextArea
+                                    name="message"
+                                    label="Сообщение"
+                                    variant="outlined"
+                                    fullWidth
+                                    multiline
+                                    minRows={4}
+                                    value={formData.message}
+                                    onChange={handleChange}
+                                    required
+                                />
+
+                                <Button
+                                    type="submit"
+                                    variant="contained"
+                                    size="large"
+                                    sx={{ alignSelf: "flex-end", px: 4 }}
+                                >
+                                    Отправить
+                                </Button>
+                            </Stack>
+                        </form>
+                    </FormContainer>
+
+                    {/* Альтернативные способы связи */}
+                    <Box sx={{ flex: 1 }}>
+                        <Typography
+                            variant="h6"
+                            sx={{ mb: 2, fontWeight: "bold" }}
+                        >
+                            Другие способы связи
+                        </Typography>
+
+                        <Stack spacing={3}>
+                            <Button
+                                variant="outlined"
+                                startIcon={<TelegramIcon />}
+                                href="http://t.me/zenitchik4"
+                                target="_blank"
+                                rel="noopener"
+                                sx={{ justifyContent: "flex-start" }}
+                            >
+                                Написать в Telegram
+                            </Button>
+
+                            <Button
+                                variant="outlined"
+                                startIcon={<EmailIcon />}
+                                href={`mailto:${process.env.REACT_APP_ORGANIZATION_EMAIL1}`}
+                                sx={{ justifyContent: "flex-start" }}
+                            >
+                                {process.env.REACT_APP_ORGANIZATION_EMAIL1}
+                            </Button>
+
+                            <Button
+                                variant="outlined"
+                                startIcon={<PhoneIcon />}
+                                href={`tel:${process.env.REACT_APP_ORGANIZATION_PHONE1?.replace(
+                                    /\D/g,
+                                    ""
+                                )}`}
+                                sx={{ justifyContent: "flex-start" }}
+                            >
+                                {process.env.REACT_APP_ORGANIZATION_PHONE1}
+                            </Button>
+
+                            <Typography variant="body2" color="text.secondary">
+                                {process.env.REACT_APP_ORGANIZATION_ADDRESS}
+                            </Typography>
+                        </Stack>
+                    </Box>
+                </Stack>
+            </Container>
+            <Container>
+                <CTA />
+            </Container>
+        </Box>
+    );
+}

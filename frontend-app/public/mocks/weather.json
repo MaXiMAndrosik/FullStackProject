@@ -1,0 +1,44 @@
+{
+    "coord": {
+        "lon": 27.2962,
+        "lat": 53.7627
+    },
+    "weather": [
+        {
+            "id": 804,
+            "main": "Clouds",
+            "description": "пасмурно",
+            "icon": "04n"
+        }
+    ],
+    "base": "stations",
+    "main": {
+        "temp": 24,
+        "feels_like": 9.26,
+        "temp_min": 10.65,
+        "temp_max": 10.65,
+        "pressure": 1014,
+        "humidity": 57,
+        "sea_level": 1014,
+        "grnd_level": 986
+    },
+    "visibility": 10000,
+    "wind": {
+        "speed": 5.52,
+        "deg": 261,
+        "gust": 11.55
+    },
+    "clouds": {
+        "all": 100
+    },
+    "dt": 1746044194,
+    "sys": {
+        "country": "BY",
+        "sunrise": 1745980626,
+        "sunset": 1746034725
+    },
+    "timezone": 10800,
+    "id": 6846555,
+    "name": "Фаниполь",
+    "cod": 200
+}
