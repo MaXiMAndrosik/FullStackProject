@@ -24,8 +24,8 @@ export default function Footer() {
             component="footer"
             maxWidth="lg"
             sx={{
-                pt: { xs: 14, sm: 8 },
-                pb: { xs: 8, sm: 8 },
+                pt: { xs: 4, sm: 8 },
+                pb: { xs: 4, sm: 8 },
             }}
         >
             <Stack

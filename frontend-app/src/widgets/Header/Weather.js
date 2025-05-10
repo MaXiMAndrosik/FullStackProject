@@ -40,7 +40,7 @@ const Weather = () => {
             >
                 <Typography
                     variant="body1"
-                    sx={{ color: "text.primary", fontWeight: 600 }}
+                    sx={{ color: "text.primary", fontWeight: 600, ml: 2 }}
                 >
                     Фаниполь
                 </Typography>

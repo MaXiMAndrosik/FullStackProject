@@ -11,16 +11,24 @@ import { CTA } from "../../shared/ui/cta";
 export default function AboutPage() {
     return (
         <Box
-            sx={{
+            sx={(theme) => ({
                 width: "100%",
                 backgroundRepeat: "no-repeat",
                 backgroundImage:
                     "radial-gradient(ellipse 80% 50% at 50% -20%, hsl(210, 100%, 90%), transparent)",
-                pt: { xs: 8, sm: 12 },
-                pb: { xs: 8, sm: 6 },
-            }}
+                ...theme.applyStyles("dark", {
+                    backgroundImage:
+                        "radial-gradient(ellipse 80% 50% at 50% -20%, hsl(210, 100%, 16%), transparent)",
+                }),
+            })}
         >
-            <Container maxWidth="lg">
+            <Container
+                maxWidth="lg"
+                sx={{
+                    pt: { xs: 14, sm: 8 },
+                    pb: { xs: 8, sm: 8 },
+                }}
+            >
                 {/* Заголовок */}
                 <Typography
                     variant="h2"
@@ -65,20 +73,36 @@ export default function AboutPage() {
                                 Жилищно-строительный потребительский кооператив
                                 «Зенитчик-4»
                             </Typography>
-                            <Typography variant="body1" paragraph>
+                            <Typography
+                                variant="body1"
+                                paragraph
+                                sx={{
+                                    color: "text.secondary",
+                                }}
+                            >
                                 Некоммерческая организация, созданная для
                                 строительства и управления многоквартирным жилым
                                 домом в г. Фаниполь (Минская область,
                                 Дзержинский район).
                             </Typography>
-                            <Typography paragraph>
+                            <Typography
+                                paragraph
+                                sx={{
+                                    color: "text.secondary",
+                                }}
+                            >
                                 Создана в 2007 году для строительства и
                                 управления многоквартирным жилым домом в городе
                                 Фаниполь. В 2012 году строительство было успешно
                                 завершено, и сейчас мы обеспечиваем комфортное
                                 проживание для 80 семей.
                             </Typography>
-                            <Typography paragraph>
+                            <Typography
+                                paragraph
+                                sx={{
+                                    color: "text.secondary",
+                                }}
+                            >
                                 Наша миссия - профессиональное управление
                                 имуществом кооператива, поддержание порядка и
                                 благоприятных условий проживания для всех членов
@@ -150,7 +174,11 @@ export default function AboutPage() {
                                 <Typography variant="subtitle2">
                                     Юридический адрес:
                                 </Typography>
-                                <Typography>
+                                <Typography
+                                    sx={{
+                                        color: "text.secondary",
+                                    }}
+                                >
                                     {process.env.REACT_APP_ORGANIZATION_ADDRESS}
                                 </Typography>
                             </Box>
@@ -172,6 +200,7 @@ export default function AboutPage() {
                                     sx={{
                                         display: "flex",
                                         alignItems: "center",
+                                        color: "text.secondary",
                                         gap: 1,
                                     }}
                                 >
@@ -189,17 +218,40 @@ export default function AboutPage() {
                                 <Typography variant="subtitle2">
                                     Банковские реквизиты:
                                 </Typography>
-                                <Typography>
+                                <Typography
+                                    sx={{
+                                        color: "text.secondary",
+                                    }}
+                                >
                                     ЦБУ 606 ОАО "АСБ Беларусбанк"
                                 </Typography>
-                                <Typography>
+                                <Typography
+                                    sx={{
+                                        color: "text.secondary",
+                                    }}
+                                >
                                     г. Дзержинск, ул. К. Маркса, д.17
                                 </Typography>
-                                <Typography>БИК: AKBBBY2X</Typography>
-                                <Typography>
+                                <Typography
+                                    sx={{
+                                        color: "text.secondary",
+                                    }}
+                                >
+                                    БИК: AKBBBY2X
+                                </Typography>
+                                <Typography
+                                    sx={{
+                                        color: "text.secondary",
+                                    }}
+                                >
                                     р/с BY07AKBB30150606006396000000
                                 </Typography>
-                                <Typography variant="subtitle2">
+                                <Typography
+                                    variant="subtitle2"
+                                    sx={{
+                                        color: "text.secondary",
+                                    }}
+                                >
                                     УНП: 690515860
                                 </Typography>
                             </Box>

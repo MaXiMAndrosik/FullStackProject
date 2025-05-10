@@ -115,15 +115,18 @@ export default function AnnouncementForm() {
 
     return (
         <Box
-            sx={{
+            sx={(theme) => ({
                 width: "100%",
                 backgroundRepeat: "no-repeat",
                 backgroundImage:
                     "radial-gradient(ellipse 80% 50% at 50% -20%, hsl(210, 100%, 90%), transparent)",
-                pt: { xs: 4, sm: 8 },
-                pb: { xs: 8, sm: 12 },
-                px: 2,
-            }}
+                ...theme.applyStyles("dark", {
+                    backgroundImage:
+                        "radial-gradient(ellipse 80% 50% at 50% -20%, hsl(210, 100%, 16%), transparent)",
+                    pt: { xs: 4, sm: 8 },
+                    pb: { xs: 8, sm: 8 },
+                }),
+            })}
         >
             <Container maxWidth="lg">
                 {/* Список существующих объявлений */}

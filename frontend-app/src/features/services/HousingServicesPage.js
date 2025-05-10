@@ -208,16 +208,24 @@ export default function HousingServicesPage() {
     return (
         <Box
             component="section"
-            sx={{
+            sx={(theme) => ({
                 width: "100%",
                 backgroundRepeat: "no-repeat",
                 backgroundImage:
                     "radial-gradient(ellipse 80% 50% at 50% -20%, hsl(210, 100%, 90%), transparent)",
-                pt: { xs: 4, sm: 8 },
-                pb: { xs: 4, sm: 8 },
-            }}
+                ...theme.applyStyles("dark", {
+                    backgroundImage:
+                        "radial-gradient(ellipse 80% 50% at 50% -20%, hsl(210, 100%, 16%), transparent)",
+                }),
+            })}
         >
-            <Container maxWidth="lg">
+            <Container
+                maxWidth="lg"
+                sx={{
+                    pt: { xs: 14, sm: 8 },
+                    pb: { xs: 8, sm: 8 },
+                }}
+            >
                 {/* Заголовок */}
                 <Typography
                     variant="h2"
@@ -292,7 +300,13 @@ export default function HousingServicesPage() {
                                                 {service.title}
                                             </Typography>
                                         </Box>
-                                        <Typography paragraph sx={{ flex: 1 }}>
+                                        <Typography
+                                            paragraph
+                                            sx={{
+                                                flex: 1,
+                                                color: "text.secondary",
+                                            }}
+                                        >
                                             {service.fullDescription}
                                         </Typography>
                                         <Box sx={{ mt: "auto" }}>
@@ -446,7 +460,13 @@ export default function HousingServicesPage() {
                                             {service.title}
                                         </Typography>
                                         {/* Описание услуги*/}
-                                        <Typography paragraph sx={{ flex: 1 }}>
+                                        <Typography
+                                            paragraph
+                                            sx={{
+                                                flex: 1,
+                                                color: "text.secondary",
+                                            }}
+                                        >
                                             {service.description}
                                         </Typography>
 
@@ -553,7 +573,13 @@ export default function HousingServicesPage() {
                                                 {service.title}
                                             </Typography>
                                         </Box>
-                                        <Typography paragraph sx={{ flex: 1 }}>
+                                        <Typography
+                                            paragraph
+                                            sx={{
+                                                flex: 1,
+                                                color: "text.secondary",
+                                            }}
+                                        >
                                             {service.description}
                                         </Typography>
                                         <Box sx={{ mt: "auto" }}>

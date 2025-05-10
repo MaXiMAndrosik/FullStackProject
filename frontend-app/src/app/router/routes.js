@@ -9,7 +9,7 @@ import UserPage from "../../features/user";
 // Services
 import HousingServicesPage from "../../features/services/HousingServicesPage";
 // Feedback
-import FeedbackPage from "../../features/feedback";
+import FeedbackPage from "../../features/feedback/FeedbackPage";
 
 // import AppealPage from "../../features/feedback";
 // About
@@ -67,6 +67,10 @@ export const routes = [
             {
                 path: "about",
                 element: <AboutPage />,
+            },
+            {
+                path: "*",
+                element: <NotFoundPage />,
             },
         ],
     },

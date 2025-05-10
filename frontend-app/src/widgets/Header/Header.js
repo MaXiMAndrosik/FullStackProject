@@ -28,12 +28,11 @@ export default function Header() {
                 alignItems: { xs: "flex-start", md: "center" },
                 justifyContent: "space-between",
                 maxWidth: { sm: "100%", md: "1700px" },
-                pt: 1.5,
                 padding: 0,
             }}
             spacing={2}
         >
-            <NavbarBreadcrumbs />
+            {/* <NavbarBreadcrumbs /> */}
             <Weather />
             <Stack direction="row" sx={{ gap: 2 }}>
                 {isAuth ? (

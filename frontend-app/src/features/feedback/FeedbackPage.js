@@ -5,21 +5,21 @@ import Container from "@mui/material/Container";
 import Typography from "@mui/material/Typography";
 import Button from "@mui/material/Button";
 import Stack from "@mui/material/Stack";
-import StyledTextArea from "../../../shared/ui/StyledTextArea";
+import StyledTextArea from "../../shared/ui/StyledTextArea";
 import TelegramIcon from "@mui/icons-material/Telegram";
 import EmailIcon from "@mui/icons-material/Email";
 import PhoneIcon from "@mui/icons-material/Phone";
 import { styled } from "@mui/material/styles";
-import { createFeedback } from "../../../app/api/feedbackAPI";
-import PhoneMaskInput from "../../../shared/libs/PhoneMaskInput";
-import { CTA } from "../../../shared/ui/cta";
+import { createFeedback } from "../../app/api/feedbackAPI";
+import PhoneMaskInput from "../../shared/libs/PhoneMaskInput";
+import { CTA } from "../../shared/ui/cta";
 
 const FormContainer = styled(Box)(({ theme }) => ({
-    backgroundColor: theme.palette.background.paper,
-    borderRadius: theme.shape.borderRadius,
-    padding: theme.spacing(4),
-    boxShadow: theme.shadows[2],
-    marginTop: theme.spacing(4),
+    // backgroundColor: theme.palette.background.paper,
+    // borderRadius: theme.shape.borderRadius,
+    // padding: theme.spacing(4),
+    // boxShadow: theme.shadows[2],
+    // marginTop: theme.spacing(4),
 }));
 
 export default function FeedbackPage() {
@@ -61,16 +61,24 @@ export default function FeedbackPage() {
 
     return (
         <Box
-            sx={{
+            sx={(theme) => ({
                 width: "100%",
                 backgroundRepeat: "no-repeat",
                 backgroundImage:
                     "radial-gradient(ellipse 80% 50% at 50% -20%, hsl(210, 100%, 90%), transparent)",
-                pt: { xs: 4, sm: 8 },
-                pb: { xs: 8, sm: 8 },
-            }}
+                ...theme.applyStyles("dark", {
+                    backgroundImage:
+                        "radial-gradient(ellipse 80% 50% at 50% -20%, hsl(210, 100%, 16%), transparent)",
+                }),
+            })}
         >
-            <Container maxWidth="md">
+            <Container
+                maxWidth="lg"
+                sx={{
+                    pt: { xs: 4, sm: 8 },
+                    pb: { xs: 4, sm: 8 },
+                }}
+            >
                 <Typography
                     variant="h2"
                     sx={{

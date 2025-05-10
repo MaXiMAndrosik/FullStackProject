@@ -31,22 +31,29 @@ export default function NotFoundPage() {
                         mb: 2,
                     }}
                 />
-
                 <Typography
                     variant="h1"
-                    sx={{ fontSize: "4rem", fontWeight: 700, mb: 2 }}
+                    sx={{
+                        fontSize: "4rem",
+                        color: "text.secondary",
+                        fontWeight: 700,
+                        mb: 2,
+                    }}
                 >
                     404
                 </Typography>
-
-                <Typography variant="h5" sx={{ mb: 3 }}>
+                <Typography
+                    variant="h5"
+                    sx={{ mb: 3, color: "text.secondary" }}
+                >
                     Страница не найдена
                 </Typography>
-
-                <Typography variant="body1" sx={{ mb: 4 }}>
+                <Typography
+                    variant="body1"
+                    sx={{ mb: 4, color: "text.secondary" }}
+                >
                     Запрашиваемая страница не существует или была перемещена.
                 </Typography>
-
                 <Button
                     variant="contained"
                     size="large"

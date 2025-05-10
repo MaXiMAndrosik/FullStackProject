@@ -51,17 +51,24 @@ export default function AnnouncementsPage() {
 
     return (
         <Box
-            sx={{
+            sx={(theme) => ({
                 width: "100%",
                 backgroundRepeat: "no-repeat",
                 backgroundImage:
                     "radial-gradient(ellipse 80% 50% at 50% -20%, hsl(210, 100%, 90%), transparent)",
-                pt: { xs: 4, sm: 8 },
-                pb: { xs: 8, sm: 12 },
-                px: 2,
-            }}
+                ...theme.applyStyles("dark", {
+                    backgroundImage:
+                        "radial-gradient(ellipse 80% 50% at 50% -20%, hsl(210, 100%, 16%), transparent)",
+                }),
+            })}
         >
-            <Container maxWidth="lg">
+            <Container
+                maxWidth="lg"
+                sx={{
+                    pt: { xs: 14, sm: 8 },
+                    pb: { xs: 8, sm: 8 },
+                }}
+            >
                 <Typography
                     variant="h2"
                     sx={{
@@ -92,20 +99,33 @@ export default function AnnouncementsPage() {
                             sx={{ boxShadow: 3, borderRadius: 2 }}
                         >
                             <CardContent>
-                                <Typography variant="h4" sx={{ mb: 2 }}>
-                                    {announcement.title || "Без названия"}
-                                </Typography>
-
-                                {/* Блок с датой, локацией и обязательностью */}
-                                {(announcement.date ||
-                                    announcement.location ||
-                                    announcement.necessity) && (
-                                    <Stack
-                                        direction="row"
-                                        spacing={2}
-                                        sx={{ mb: 3, flexWrap: "wrap" }}
+                                {/* Блок с заголовком и датой */}
+                                <Stack
+                                    direction={{ xs: "column", sm: "row" }}
+                                    spacing={{ xs: 1, sm: 2 }}
+                                    alignItems="center"
+                                    sx={{ width: "100%", pb: 2 }}
+                                    justifyContent={{
+                                        sm: "space-between",
+                                    }}
+                                >
+                                    <Typography
+                                        variant="h4"
+                                        textAlign={{ xs: "center", sm: "left" }}
                                     >
-                                        {announcement.date && (
+                                        {announcement.title || "Без названия"}
+                                    </Typography>
+                                    {announcement.date && (
+                                        <Box
+                                            sx={{
+                                                mt: { xs: 1, sm: 0 },
+                                                display: "flex",
+                                                justifyContent: {
+                                                    xs: "center",
+                                                    sm: "flex-end",
+                                                },
+                                            }}
+                                        >
                                             <Chip
                                                 icon={<CalendarToday />}
                                                 label={new Date(
@@ -113,18 +133,29 @@ export default function AnnouncementsPage() {
                                                 ).toLocaleString()}
                                                 color="primary"
                                             />
-                                        )}
-                                        {announcement.location && (
-                                            <Chip
-                                                icon={<LocationOn />}
-                                                label={announcement.location}
-                                            />
-                                        )}
+                                        </Box>
+                                    )}
+                                </Stack>
+
+                                {/* Блок с локацией и обязательностью */}
+                                {( announcement.location ||
+                                    announcement.necessity) && (
+                                    <Stack
+                                        direction={{ xs: "column", sm: "row" }}
+                                        spacing={{ xs: 1, sm: 2 }}
+                                        sx={{ mb: 3, flexWrap: "wrap" }}
+                                    >
                                         {announcement.necessity && (
                                             <Chip
                                                 icon={<People />}
                                                 label={announcement.necessity}
                                                 color="error"
+                                            />
+                                        )}
+                                        {announcement.location && (
+                                            <Chip
+                                                icon={<LocationOn />}
+                                                label={announcement.location}
                                             />
                                         )}
                                     </Stack>
@@ -138,7 +169,10 @@ export default function AnnouncementsPage() {
                                                 <Typography
                                                     key={index}
                                                     paragraph
-                                                    sx={{ fontSize: "1.1rem" }}
+                                                    sx={{
+                                                        fontSize: "1.1rem",
+                                                        color: "text.secondary",
+                                                    }}
                                                 >
                                                     {paragraph}
                                                 </Typography>
@@ -175,12 +209,18 @@ export default function AnnouncementsPage() {
                                                     <Box
                                                         component="li"
                                                         key={index}
+                                                        sx={{
+                                                            fontWeight:
+                                                                "medium",
+                                                            color: "text.secondary",
+                                                        }}
                                                     >
                                                         <Typography
                                                             variant="body1"
                                                             sx={{
                                                                 fontWeight:
                                                                     "medium",
+                                                                color: "text.secondary",
                                                             }}
                                                         >
                                                             {item ||
@@ -243,9 +283,12 @@ export default function AnnouncementsPage() {
                                 {(announcement.contacts?.phone ||
                                     announcement.contacts?.email) && (
                                     <Stack
-                                        direction="row"
+                                        direction={{ xs: "column", sm: "row" }}
                                         spacing={2}
-                                        alignItems="center"
+                                        alignItems={{
+                                            xs: "flex-start",
+                                            sm: "center",
+                                        }}
                                         sx={{
                                             fontStyle: "italic",
                                             mt: 1,

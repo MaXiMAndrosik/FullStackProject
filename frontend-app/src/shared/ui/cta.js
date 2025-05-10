@@ -8,7 +8,7 @@ export const CTA = () => {
         <Box
             sx={{
                 textAlign: "center",
-                mt: 4,
+                // mt: 4,
                 p: 4,
                 borderRadius: 2,
                 backgroundColor: "primary.main",

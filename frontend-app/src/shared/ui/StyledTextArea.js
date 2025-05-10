@@ -20,7 +20,7 @@ const StyledTextArea = styled(TextField)(({ theme }) => ({
     },
 
     "& .MuiInputLabel-outlined": {
-        backgroundColor: theme.palette.background.paper,
+        // backgroundColor: theme.palette.background.paper,
         padding: "0 4px",
         transform: "translate(14px, 18px) scale(1)",
 

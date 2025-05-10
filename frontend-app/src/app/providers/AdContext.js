@@ -19,10 +19,12 @@ export const AdProvider = ({ children }) => {
     const loadAnnouncements = async () => {
         try {
             setLoading(true);
-            const data =
-                process.env.NODE_ENV === "development"
-                    ? await mockFetchAnnouncements()
-                    : await fetchAnnouncements();
+            const data = await mockFetchAnnouncements();
+
+            // const data =
+            //     process.env.NODE_ENV === "development"
+            //         ? await mockFetchAnnouncements()
+            //         : await fetchAnnouncements();
             if (!data) {
                 throw new Error("Некорректный формат данных");
             }
