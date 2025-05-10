@@ -35,7 +35,7 @@ export default function AnnouncementsPage() {
 
     if (error) {
         return (
-            <Container maxWidth="md" sx={{ mt: 4 }}>
+            <Container maxWidth="md" sx={{ pt: 4 }}>
                 <Alert severity="error">{error}</Alert>
             </Container>
         );
@@ -43,7 +43,7 @@ export default function AnnouncementsPage() {
 
     if (!announcements?.length) {
         return (
-            <Container maxWidth="md" sx={{ mt: 4 }}>
+            <Container maxWidth="md" sx={{ pt: 4 }}>
                 <Alert severity="info">Объявления не найдены</Alert>
             </Container>
         );
@@ -138,7 +138,7 @@ export default function AnnouncementsPage() {
                                 </Stack>
 
                                 {/* Блок с локацией и обязательностью */}
-                                {( announcement.location ||
+                                {(announcement.location ||
                                     announcement.necessity) && (
                                     <Stack
                                         direction={{ xs: "column", sm: "row" }}
@@ -357,7 +357,8 @@ export default function AnnouncementsPage() {
                         </Card>
                     ))}
                 </Stack>
-
+            </Container>
+            <Container>
                 <CTA />
             </Container>
         </Box>

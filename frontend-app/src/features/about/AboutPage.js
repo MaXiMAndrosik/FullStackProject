@@ -257,10 +257,10 @@ export default function AboutPage() {
                             </Box>
                         </Stack>
                     </Box>
-
-                    {/* CTA блок */}
-                    <CTA />
                 </Stack>
+            </Container>
+            <Container>
+                <CTA />
             </Container>
         </Box>
     );

@@ -123,6 +123,7 @@ export default function FeedbackPage() {
                             <Stack spacing={3}>
                                 <StyledTextArea
                                     name="name"
+                                    autoComplete="name"
                                     label="Ваше имя"
                                     variant="outlined"
                                     fullWidth
@@ -133,6 +134,7 @@ export default function FeedbackPage() {
 
                                 <StyledTextArea
                                     label="Email"
+                                    autoComplete="email"
                                     variant="outlined"
                                     fullWidth
                                     value={formData.email}
@@ -150,6 +152,7 @@ export default function FeedbackPage() {
 
                                 <StyledTextArea
                                     name="phone"
+                                    autoComplete="phone"
                                     label="Телефон"
                                     variant="outlined"
                                     inputMode="tel"

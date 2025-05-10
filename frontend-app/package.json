@@ -1,6 +1,6 @@
 {
-  "name": "material-ui",
-  "version": "0.1.0",
+  "name": "zenitchik4-service",
+  "version": "1.0.0-beta",
   "private": true,
   "dependencies": {
     "@emotion/react": "^11.14.0",

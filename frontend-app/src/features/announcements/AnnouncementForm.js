@@ -16,6 +16,7 @@ import {
 import { Delete } from "@mui/icons-material";
 import SimpleAnnouncement from "./components/SimpleAnnouncement";
 import MeetingAnnouncement from "./components/MeetingAnnouncement";
+import { CTA } from "../../shared/ui/cta";
 
 export default function AnnouncementForm() {
     const { announcements, addAnnouncement, deleteAnnouncement } = useAds();
@@ -123,12 +124,16 @@ export default function AnnouncementForm() {
                 ...theme.applyStyles("dark", {
                     backgroundImage:
                         "radial-gradient(ellipse 80% 50% at 50% -20%, hsl(210, 100%, 16%), transparent)",
-                    pt: { xs: 4, sm: 8 },
-                    pb: { xs: 8, sm: 8 },
                 }),
             })}
         >
-            <Container maxWidth="lg">
+            <Container
+                maxWidth="lg"
+                sx={{
+                    pt: { xs: 14, sm: 8 },
+                    pb: { xs: 8, sm: 8 },
+                }}
+            >
                 {/* Список существующих объявлений */}
                 {announcements?.length > 0 && (
                     <Box sx={{ mb: 4 }}>
@@ -252,6 +257,9 @@ export default function AnnouncementForm() {
                         )}
                     </Grid>
                 </Grid>
+            </Container>
+            <Container>
+                <CTA />
             </Container>
         </Box>
     );

@@ -4,20 +4,19 @@ import HomePage from "../../features/home";
 // Advertisements
 import AnnouncementPage from "../../features/announcements/AnnouncementPage";
 import AnnouncementForm from "../../features/announcements/AnnouncementForm";
-
-import UserPage from "../../features/user";
 // Services
 import HousingServicesPage from "../../features/services/HousingServicesPage";
 // Feedback
 import FeedbackPage from "../../features/feedback/FeedbackPage";
-
-// import AppealPage from "../../features/feedback";
 // About
 import AboutPage from "../../features/about/AboutPage";
 // NotFound
 import NotFoundPage from "../../widgets/ErrorPages/NotFoundPage";
+// Auth
+import SignUp from "../../features/auth/SignUp";
+import SignIn from "../../features/auth/SignIn";
 
-
+import UserPage from "../../features/user";
 
 export const routes = [
     {
@@ -77,5 +76,13 @@ export const routes = [
     {
         path: "*",
         element: <NotFoundPage />,
+    },
+    {
+        path: "/register",
+        element: <SignUp />,
+    },
+    {
+        path: "/login",
+        element: <SignIn />,
     },
 ];

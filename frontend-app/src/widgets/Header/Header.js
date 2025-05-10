@@ -1,11 +1,10 @@
 import * as React from "react";
+import { Link, useLocation } from "react-router-dom";
 import { useAds } from "../../app/providers/AdContext";
 import Stack from "@mui/material/Stack";
 import NotificationsRoundedIcon from "@mui/icons-material/NotificationsRounded";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-
-import NavbarBreadcrumbs from "./NavbarBreadcrumbs";
 import UserMenu from "./UserMenu";
 import MenuButton from "../../shared/ui/MenuButton";
 import ColorModeIconDropdown from "../../shared/ui/ColorModeIconDropdown";
@@ -15,8 +14,9 @@ export default function Header() {
     // Показывать бейдж, если есть объявления
     const { announcements } = useAds();
     const hasAds = announcements && announcements.length > 0;
+    const location = useLocation();
 
-    const isAuth = true;
+    const isAuth = false;
 
     return (
         <Stack
@@ -32,7 +32,6 @@ export default function Header() {
             }}
             spacing={2}
         >
-            {/* <NavbarBreadcrumbs /> */}
             <Weather />
             <Stack direction="row" sx={{ gap: 2 }}>
                 {isAuth ? (
@@ -71,13 +70,23 @@ export default function Header() {
                             >
                                 <NotificationsRoundedIcon />
                             </MenuButton>
-                            <Button color="primary" variant="text" size="small">
+                            <Button
+                                color="primary"
+                                variant="outlined"
+                                size="small"
+                                component={Link}
+                                to="/login"
+                                selected={location.pathname === "/login"}
+                            >
                                 Войти
                             </Button>
                             <Button
                                 color="primary"
                                 variant="contained"
                                 size="small"
+                                component={Link}
+                                to="/register"
+                                selected={location.pathname === "/register"}
                             >
                                 Зарегистрироваться
                             </Button>

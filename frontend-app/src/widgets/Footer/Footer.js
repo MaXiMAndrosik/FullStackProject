@@ -6,6 +6,7 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { styled } from "@mui/material/styles";
 import TelegramIcon from "@mui/icons-material/Telegram";
+import { TechFooter } from "./TechFooter";
 import { Room, Phone, Email } from "@mui/icons-material";
 
 const FooterLink = styled(Link)(({ theme }) => ({
@@ -18,6 +19,7 @@ const FooterLink = styled(Link)(({ theme }) => ({
     gap: theme.spacing(1),
 }));
 
+
 export default function Footer() {
     return (
         <Container
@@ -25,7 +27,7 @@ export default function Footer() {
             maxWidth="lg"
             sx={{
                 pt: { xs: 4, sm: 8 },
-                pb: { xs: 4, sm: 8 },
+                pb: { xs: 2, sm: 4 },
             }}
         >
             <Stack
@@ -148,15 +150,29 @@ export default function Footer() {
                 </Stack>
             </Stack>
 
-            {/* Копирайт */}
             <Box sx={{ mt: 6, pt: 3, borderTop: 1, borderColor: "divider" }}>
-                <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    align="center"
+                <Stack
+                    direction={{ xs: "column", sm: "row" }}
+                    justifyContent="space-between"
+                    alignItems="center"
+                    spacing={2}
                 >
-                    © {new Date().getFullYear()} ЖСПК «Зенитчик-4». Все права
-                    защищены.
+                    <Typography variant="body2" color="text.secondary">
+                        © {new Date().getFullYear()} ЖСПК «Зенитчик-4». Все
+                        права защищены.
+                    </Typography>
+                    <TechFooter />
+                </Stack>
+
+                {/* Дополнительная техническая информация */}
+                <Typography
+                    variant="caption"
+                    color="text.disabled"
+                    display="block"
+                    textAlign="center"
+                    mt={2}
+                >
+                    v{process.env.REACT_APP_VERSION || "1.0.0"}
                 </Typography>
             </Box>
         </Container>

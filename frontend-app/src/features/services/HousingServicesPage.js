@@ -720,8 +720,8 @@ export default function HousingServicesPage() {
                         Жилищный кодекс Республики Беларусь
                     </Button>
                 </Box>
-
-                {/* CTA блок */}
+            </Container>
+            <Container>
                 <CTA />
             </Container>
         </Box>
