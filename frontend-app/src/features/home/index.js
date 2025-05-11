@@ -16,12 +16,16 @@ export default function HomePage() {
                 }}
             >
                 <Box
-                    sx={{
+                    sx={(theme) => ({
                         textAlign: "center",
                         p: 4,
                         borderRadius: 2,
-                        boxShadow: 1,
-                    }}
+                        color: "primary.contrastText",
+                        backgroundColor: "primary.main",
+                        ...theme.applyStyles("dark", {
+                            backgroundColor: "hsl(210, 100%, 16%)",
+                        }),
+                    })}
                 >
                     <Typography variant="h6" component="p" sx={{ mb: 3 }}>
                         Работаем с 2007 года. Успешно построили и эксплуатируем
@@ -30,7 +34,7 @@ export default function HomePage() {
                     <Button
                         component={Link}
                         to="/about"
-                        variant="outlined"
+                        variant="contained"
                         size="large"
                         sx={{ fontWeight: "bold" }}
                     >

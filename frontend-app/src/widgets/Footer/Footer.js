@@ -44,14 +44,6 @@ export default function Footer() {
                     >
                         ЖСПК «Зенитчик-4»
                     </Typography>
-                    {/* <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        paragraph
-                    >
-                        Профессиональное управление многоквартирным домом в г.
-                        Фаниполь
-                    </Typography> */}
                     <FooterLink
                         href="//t.me/zenitchik4"
                         target="_blank"

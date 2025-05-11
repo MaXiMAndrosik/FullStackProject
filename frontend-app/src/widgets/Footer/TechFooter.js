@@ -7,7 +7,7 @@ import TelegramIcon from "@mui/icons-material/Telegram";
 
 // Стилизованная ссылка
 const MetaLink = styled(Link)(({ theme }) => ({
-    color: theme.palette.text.disabled,
+    color: theme.palette.text.secondary,
     fontSize: "0.75rem",
     "&:hover": { color: theme.palette.primary.main },
     display: "flex",
