@@ -1,27 +1,27 @@
 import React from "react";
-import { useNavigate } from "react-router-dom";
 import { Box, Button, Container, Typography, useTheme } from "@mui/material";
 import HomeIcon from "@mui/icons-material/Home";
 import SentimentVeryDissatisfiedIcon from "@mui/icons-material/SentimentVeryDissatisfied";
+import { Link as RouterLink } from "react-router-dom";
+
 
 export default function NotFoundPage() {
-    const navigate = useNavigate();
     const theme = useTheme();
 
     return (
         <Container
             maxWidth="md"
-            sx={{ height: "100vh", display: "flex", alignItems: "center" }}
+            sx={{ height: "60vh", display: "flex", alignItems: "center" }}
         >
             <Box
                 sx={{
                     textAlign: "center",
                     p: 4,
                     borderRadius: 2,
-                    backgroundColor: theme.palette.background.paper,
                     boxShadow: theme.shadows[3],
                     maxWidth: 600,
                     mx: "auto",
+                    backgroundColor: "background.paper",
                 }}
             >
                 <SentimentVeryDissatisfiedIcon
@@ -35,9 +35,13 @@ export default function NotFoundPage() {
                     variant="h1"
                     sx={{
                         fontSize: "4rem",
-                        color: "text.secondary",
                         fontWeight: 700,
                         mb: 2,
+                        background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                        WebkitBackgroundClip: "text",
+                        WebkitTextFillColor: "transparent",
+                        textShadow: `0 2px 4px rgba(0,0,0,0.1)`,
+                        color: "text.secondary",
                     }}
                 >
                     404
@@ -58,7 +62,8 @@ export default function NotFoundPage() {
                     variant="contained"
                     size="large"
                     startIcon={<HomeIcon />}
-                    onClick={() => navigate("/")}
+                    component={RouterLink}
+                    to="/"
                     sx={{
                         px: 4,
                         py: 1.5,

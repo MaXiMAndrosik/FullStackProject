@@ -11,7 +11,7 @@ const Weather = () => {
         return (
             <Stack direction="row" alignItems="center" gap={1}>
                 <CircularProgress size={24} />
-                {/* <Typography>Загрузка погоды...</Typography> */}
+                <Typography>Загрузка погоды...</Typography>
             </Stack>
         );
     }
@@ -25,7 +25,7 @@ const Weather = () => {
     }
 
     if (!weatherData || !weatherData.weather || !weatherData.main) {
-        return null;
+        return (<></>);
     }
 
     return (

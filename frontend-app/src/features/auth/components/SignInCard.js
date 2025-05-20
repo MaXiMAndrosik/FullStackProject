@@ -1,4 +1,4 @@
-import * as React from "react";
+import { useEffect, useState } from "react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import MuiCard from "@mui/material/Card";
@@ -12,6 +12,13 @@ import Typography from "@mui/material/Typography";
 import { styled } from "@mui/material/styles";
 import ForgotPassword from "./ForgotPassword";
 import { Logo } from "../../../shared/ui/Logo";
+import { useDispatch, useSelector } from "react-redux";
+import {
+    loginUser,
+    selectIsAuthenticated,
+    selectCurrentUser,
+} from "../model/authSlice";
+import { useNavigate } from "react-router-dom";
 
 const Card = styled(MuiCard)(({ theme }) => ({
     display: "flex",
@@ -32,11 +39,18 @@ const Card = styled(MuiCard)(({ theme }) => ({
 }));
 
 export default function SignInCard() {
-    const [emailError, setEmailError] = React.useState(false);
-    const [emailErrorMessage, setEmailErrorMessage] = React.useState("");
-    const [passwordError, setPasswordError] = React.useState(false);
-    const [passwordErrorMessage, setPasswordErrorMessage] = React.useState("");
-    const [open, setOpen] = React.useState(false);
+    const [emailError, setEmailError] = useState(false);
+    const [emailErrorMessage, setEmailErrorMessage] = useState("");
+    const [passwordError, setPasswordError] = useState(false);
+    const [passwordErrorMessage, setPasswordErrorMessage] = useState("");
+    const [open, setOpen] = useState(false);
+
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
+    const [rememberMe, setRememberMe] = useState(false);
+    // Селекторы из Redux
+    const isAuthenticated = useSelector(selectIsAuthenticated);
+    const user = useSelector(selectCurrentUser);
 
     const handleClickOpen = () => {
         setOpen(true);
@@ -46,16 +60,8 @@ export default function SignInCard() {
         setOpen(false);
     };
 
-    const handleSubmit = (event) => {
-        if (emailError || passwordError) {
-            event.preventDefault();
-            return;
-        }
-        const data = new FormData(event.currentTarget);
-        console.log({
-            email: data.get("email"),
-            password: data.get("password"),
-        });
+    const handleRememberMeChange = (event) => {
+        setRememberMe(event.target.checked);
     };
 
     const validateInputs = () => {
@@ -66,7 +72,9 @@ export default function SignInCard() {
 
         if (!email.value || !/\S+@\S+\.\S+/.test(email.value)) {
             setEmailError(true);
-            setEmailErrorMessage("Please enter a valid email address.");
+            setEmailErrorMessage(
+                "Пожалуйста, введите действительный адрес электронной почты."
+            );
             isValid = false;
         } else {
             setEmailError(false);
@@ -76,7 +84,7 @@ export default function SignInCard() {
         if (!password.value || password.value.length < 6) {
             setPasswordError(true);
             setPasswordErrorMessage(
-                "Password must be at least 6 characters long."
+                "Пароль должен быть длиной не менее 8 символов."
             );
             isValid = false;
         } else {
@@ -86,6 +94,74 @@ export default function SignInCard() {
 
         return isValid;
     };
+
+    const handleSubmit = async (event) => {
+        event.preventDefault();
+
+        if (!validateInputs()) {
+            return;
+        }
+
+        const userData = {
+            email: event.currentTarget.email.value,
+            password: event.currentTarget.password.value,
+            remember: rememberMe,
+        };
+        console.log(userData);
+
+        try {
+            const result = await dispatch(loginUser(userData));
+
+            if (loginUser.fulfilled.match(result)) {
+                navigate("/");
+                return;
+            }
+
+            if (loginUser.rejected.match(result)) {
+                // "Неверный email или пароль (401)
+                if (
+                    result.payload?.status === 401 ||
+                    result.payload?.message?.includes("Invalid credentials")
+                ) {
+                    setEmailError(true);
+                    setEmailErrorMessage("Неверный email или пароль.");
+                    setPasswordError(true);
+                    setPasswordErrorMessage("Неверный email или пароль.");
+                    return;
+                }
+
+                // "Неверный email или пароль (429)
+                if (
+                    result.payload?.status === 429 ||
+                    result.payload?.message?.includes("Too Many Attempts")
+                ) {
+                    setEmailError(true);
+                    setEmailErrorMessage("Слишком много запросов.");
+                    return;
+                }
+
+                console.log("HTTP Status Code:", result.payload?.status);
+                console.log("Full error payload:", result.payload);
+
+                // Обработка иных ошибок валидации с сервера
+                if (result.payload?.errors) {
+                    console.log(result.payload);
+                }
+            }
+        } catch (err) {
+            console.error("Ошибка аутентификации:", err);
+        }
+    };
+
+    useEffect(() => {
+        if (isAuthenticated) {
+            if (!user?.email_verified_at) {
+                navigate("/verify-notice");
+            } else {
+                navigate("/");
+            }
+        }
+    }, [isAuthenticated, user, navigate]);
 
     return (
         <Card variant="outlined">
@@ -164,8 +240,13 @@ export default function SignInCard() {
                     />
                 </FormControl>
                 {/* Checkbox запомнить меня */}
-                <FormControlLabel
-                    control={<Checkbox value="remember" color="primary" />}
+                <FormControlLabel control={
+                        <Checkbox
+                            checked={rememberMe}
+                            onChange={handleRememberMeChange}
+                            color="primary"
+                        />
+                    }
                     label="Запомнить меня"
                 />
                 <ForgotPassword open={open} handleClose={handleClose} />

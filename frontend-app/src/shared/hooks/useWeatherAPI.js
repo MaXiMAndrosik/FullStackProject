@@ -11,6 +11,12 @@ export const useWeatherAPI = () => {
             setLoading(true);
             setError(null);
             const data = await fetchWeather();
+            if (data.code === "ERR_NETWORK") {
+                setError(data.message);
+            }
+            if (data.code === "ERR_BAD_RESPONSE") {
+                setError(data.message);
+            }
             setWeatherData(data);
         } catch (err) {
             setError(err.message);

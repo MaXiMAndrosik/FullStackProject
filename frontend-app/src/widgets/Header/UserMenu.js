@@ -1,4 +1,6 @@
-import * as React from "react";
+import { useState, Fragment  } from "react";
+import { useDispatch } from "react-redux"; 
+import { logoutUser } from "../../features/auth/model/authSlice"; 
 import { Link } from "react-router-dom";
 import { styled } from "@mui/material/styles";
 import Divider, { dividerClasses } from "@mui/material/Divider";
@@ -17,16 +19,27 @@ const MenuItem = styled(MuiMenuItem)({
 });
 
 export default function UserMenu() {
-    const [anchorEl, setAnchorEl] = React.useState(null);
+    const [anchorEl, setAnchorEl] = useState(null);
+    const dispatch = useDispatch();
     const open = Boolean(anchorEl);
+
     const handleClick = (event) => {
         setAnchorEl(event.currentTarget);
     };
+
+    // Функция для закрытия меню
     const handleClose = () => {
         setAnchorEl(null);
     };
+
+    // Функция для обработки выхода
+    const handleLogout = () => {
+        dispatch(logoutUser());
+        handleClose();
+    };
+
     return (
-        <React.Fragment>
+        <Fragment>
             <MenuButton
                 aria-label="Open menu"
                 onClick={handleClick}
@@ -69,7 +82,7 @@ export default function UserMenu() {
                 </MenuItem>
                 <Divider />
                 <MenuItem
-                    onClick={handleClose}
+                    onClick={handleLogout}
                     sx={{
                         [`& .${listItemIconClasses.root}`]: {
                             ml: "auto",
@@ -83,6 +96,6 @@ export default function UserMenu() {
                     </ListItemIcon>
                 </MenuItem>
             </Menu>
-        </React.Fragment>
+        </Fragment>
     );
 }

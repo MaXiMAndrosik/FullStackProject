@@ -1,4 +1,4 @@
-import * as React from "react";
+import { useState } from "react";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import CssBaseline from "@mui/material/CssBaseline";
@@ -13,6 +13,9 @@ import MuiCard from "@mui/material/Card";
 import { styled } from "@mui/material/styles";
 import Content from "./components/Content";
 import { Logo } from "../../shared/ui/Logo";
+import { useDispatch } from "react-redux";
+import { registerUser } from "../auth/model/authSlice";
+import { useNavigate } from "react-router-dom";
 
 const Card = styled(MuiCard)(({ theme }) => ({
     display: "flex",
@@ -60,19 +63,34 @@ const SignUpContainer = styled(Stack)(({ theme }) => ({
 }));
 
 export default function SignUp(props) {
-    const [emailError, setEmailError] = React.useState(false);
-    const [emailErrorMessage, setEmailErrorMessage] = React.useState("");
-    const [passwordError, setPasswordError] = React.useState(false);
-    const [passwordErrorMessage, setPasswordErrorMessage] = React.useState("");
-    const [nameError, setNameError] = React.useState(false);
-    const [nameErrorMessage, setNameErrorMessage] = React.useState("");
+    const [emailError, setEmailError] = useState(false);
+    const [emailErrorMessage, setEmailErrorMessage] = useState("");
+    const [passwordError, setPasswordError] = useState(false);
+    const [passwordErrorMessage, setPasswordErrorMessage] = useState("");
+    const [nameError, setNameError] = useState(false);
+    const [nameErrorMessage, setNameErrorMessage] = useState("");
+
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
 
     const validateInputs = () => {
+        const name = document.getElementById("name");
         const email = document.getElementById("email");
         const password = document.getElementById("password");
-        const name = document.getElementById("name");
+        const passwordConfirmation = document.getElementById(
+            "password_confirmation"
+        );
 
         let isValid = true;
+
+        if (!name.value || name.value.length < 1) {
+            setNameError(true);
+            setNameErrorMessage("Введите Ваше имя.");
+            isValid = false;
+        } else {
+            setNameError(false);
+            setNameErrorMessage("");
+        }
 
         if (!email.value || !/\S+@\S+\.\S+/.test(email.value)) {
             setEmailError(true);
@@ -85,7 +103,11 @@ export default function SignUp(props) {
             setEmailErrorMessage("");
         }
 
-        if (!password.value || password.value.length < 8) {
+        if (password.value !== passwordConfirmation.value) {
+            setPasswordError(true);
+            setPasswordErrorMessage("Пароли не совпадают.");
+            isValid = false;
+        } else if (password.value.length < 8) {
             setPasswordError(true);
             setPasswordErrorMessage(
                 "Пароль должен быть длиной не менее 8 символов."
@@ -96,28 +118,50 @@ export default function SignUp(props) {
             setPasswordErrorMessage("");
         }
 
-        if (!name.value || name.value.length < 1) {
-            setNameError(true);
-            setNameErrorMessage("Введите Ваше имя.");
-            isValid = false;
-        } else {
-            setNameError(false);
-            setNameErrorMessage("");
-        }
-
         return isValid;
     };
-    const handleSubmit = (event) => {
-        if (nameError || emailError || passwordError) {
-            event.preventDefault();
+    const handleSubmit = async (event) => {
+        event.preventDefault();
+
+        if (!validateInputs()) {
             return;
         }
-        const data = new FormData(event.currentTarget);
-        console.log({
-            name: data.get("name"),
-            email: data.get("email"),
-            password: data.get("password"),
-        });
+
+        const userData = {
+            name: event.currentTarget.name.value,
+            email: event.currentTarget.email.value,
+            password: event.currentTarget.password.value,
+            password_confirmation:
+                event.currentTarget.password_confirmation.value,
+        };
+
+        try {
+            const result = await dispatch(registerUser(userData));
+
+            if (registerUser.fulfilled.match(result)) {
+                // Перенаправляем на страницу подтверждения
+                navigate("/verify-notice", {
+                    state: { email: userData.email },
+                });
+            }
+
+            if (registerUser.rejected.match(result)) {
+                // Обработка ошибки: Этот email уже занят
+                if (result.payload?.errors?.email?.[0]) {
+                    setEmailError(true);
+                    setEmailErrorMessage(
+                        "Этот email уже занят. Попробуйте войти или восстановить пароль."
+                    );
+                }
+
+                // Обработка иных ошибок валидации с сервера
+                if (result.payload?.errors) {
+                    console.log(result.payload);
+                }
+            }
+        } catch (err) {
+            console.error("Ошибка регистрации:", err);
+        }
     };
 
     return (
@@ -201,6 +245,25 @@ export default function SignUp(props) {
                                 placeholder="••••••"
                                 type="password"
                                 id="password"
+                                autoComplete="new-password"
+                                variant="outlined"
+                                error={passwordError}
+                                helperText={passwordErrorMessage}
+                                color={passwordError ? "error" : "primary"}
+                            />
+                        </FormControl>
+                        {/* Поле для повторного ввода пароля */}
+                        <FormControl>
+                            <FormLabel htmlFor="password_confirmation">
+                                Подтвердите пароль
+                            </FormLabel>
+                            <TextField
+                                required
+                                fullWidth
+                                name="password_confirmation"
+                                placeholder="••••••"
+                                type="password"
+                                id="password_confirmation"
                                 autoComplete="new-password"
                                 variant="outlined"
                                 error={passwordError}

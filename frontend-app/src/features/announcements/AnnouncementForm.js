@@ -26,18 +26,17 @@ export default function AnnouncementForm() {
     const [form, setForm] = useState({
         title: "",
         message: [""],
-        contacts: {
-            phone: "",
-            email: "",
-        },
+        contacts: { phone: null, email: null }, 
         signature: "",
         publish: new Date().toISOString(),
-        date: "",
-        location: "",
-        necessity: "",
-        agenda: [""],
+        date: null,
+        location: null,
+        necessity: null,
+        agenda: [],
         documents: [],
-        expiresAt: "",
+        expiresAt: new Date(
+            Date.now() + 30 * 24 * 60 * 60 * 1000
+        ).toISOString(),
     });
 
     const handleTabChange = (event, newValue) => {
@@ -106,11 +105,13 @@ export default function AnnouncementForm() {
     // Универсальный обработчик отправки
     const handleSubmit = (formData) => {
         // Очистка пустых полей перед отправкой
-        const cleanedData = Object.fromEntries(
-            Object.entries(formData).filter(([_, v]) => v !== "" && v !== null)
-        );
-        console.log(cleanedData);
-        addAnnouncement(cleanedData);
+        // const cleanedData = Object.fromEntries(
+        //     Object.entries(formData).filter(([_, v]) => v !== "" && v !== null)
+        // );
+        // event.preventDefault();
+
+        console.log(formData);
+        addAnnouncement(formData);
         navigate("/announcements");
     };
 

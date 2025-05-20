@@ -9,22 +9,14 @@ import StyledTextArea from "../../shared/ui/StyledTextArea";
 import TelegramIcon from "@mui/icons-material/Telegram";
 import EmailIcon from "@mui/icons-material/Email";
 import PhoneIcon from "@mui/icons-material/Phone";
-import { styled } from "@mui/material/styles";
 import { createFeedback } from "../../app/api/feedbackAPI";
 import PhoneMaskInput from "../../shared/libs/PhoneMaskInput";
 import { CTA } from "../../shared/ui/cta";
 
-const FormContainer = styled(Box)(({ theme }) => ({
-    // backgroundColor: theme.palette.background.paper,
-    // borderRadius: theme.shape.borderRadius,
-    // padding: theme.spacing(4),
-    // boxShadow: theme.shadows[2],
-    // marginTop: theme.spacing(4),
-}));
-
 export default function FeedbackPage() {
     const navigate = useNavigate();
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isSuccess, setIsSuccess] = useState(true);
 
     const [formData, setFormData] = useState({
         name: "",
@@ -48,14 +40,17 @@ export default function FeedbackPage() {
             phone: "",
             message: "",
         });
+
         try {
             const createdFeedback = await createFeedback(formData);
             return createdFeedback;
         } catch (error) {
-            console.error(error.response?.data?.message || "Ошибка отправки");
+            setIsSuccess(false);
         } finally {
             setIsSubmitting(false);
-            navigate("/");
+            if (isSuccess) {
+                navigate("/");
+            }
         }
     };
 
@@ -118,7 +113,7 @@ export default function FeedbackPage() {
 
                 <Stack direction={{ xs: "column", md: "row" }} spacing={4}>
                     {/* Форма обратной связи */}
-                    <FormContainer sx={{ flex: 2 }}>
+                    <Box sx={{ flex: 2 }}>
                         <form onSubmit={handleSubmit}>
                             <Stack spacing={3}>
                                 <StyledTextArea
@@ -187,7 +182,7 @@ export default function FeedbackPage() {
                                 </Button>
                             </Stack>
                         </form>
-                    </FormContainer>
+                    </Box>
 
                     {/* Альтернативные способы связи */}
                     <Box sx={{ flex: 1 }}>

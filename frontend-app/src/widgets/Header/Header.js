@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useSelector } from "react-redux";
 import { Link, useLocation } from "react-router-dom";
 import { useAds } from "../../app/providers/AdContext";
 import Stack from "@mui/material/Stack";
@@ -9,14 +10,16 @@ import UserMenu from "./UserMenu";
 import MenuButton from "../../shared/ui/MenuButton";
 import ColorModeIconDropdown from "../../shared/ui/ColorModeIconDropdown";
 import Weather from "./Weather";
+import {
+    selectIsAuthenticated,
+} from "../../features/auth/model/authSlice";
 
 export default function Header() {
     // Показывать бейдж, если есть объявления
     const { announcements } = useAds();
     const hasAds = announcements && announcements.length > 0;
     const location = useLocation();
-
-    const isAuth = false;
+    const isAuthenticated = useSelector(selectIsAuthenticated);
 
     return (
         <Stack
@@ -34,7 +37,7 @@ export default function Header() {
         >
             <Weather />
             <Stack direction="row" sx={{ gap: 2 }}>
-                {isAuth ? (
+                {isAuthenticated ? (
                     <>
                         <Stack
                             direction="row"
