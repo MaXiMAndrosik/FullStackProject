@@ -63,6 +63,7 @@ export default function Header() {
                             sx={{
                                 display: { xs: "none", md: "flex" },
                                 gap: 1,
+                                p: 2,
                                 alignItems: "center",
                             }}
                         >

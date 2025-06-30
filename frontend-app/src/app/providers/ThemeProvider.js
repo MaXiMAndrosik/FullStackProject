@@ -4,9 +4,10 @@ import { ThemeProvider, createTheme } from "@mui/material/styles";
 
 import { inputsCustomizations } from "../../shared/theme/customizations/inputs";
 import { dataDisplayCustomizations } from "../../shared/theme/customizations/dataDisplay";
-import { feedbackCustomizations } from "../../shared/theme/customizations/feedback";
+import { appealsCustomizations } from "../../shared/theme/customizations/appeals";
 import { navigationCustomizations } from "../../shared/theme/customizations/navigation";
 import { surfacesCustomizations } from "../../shared/theme/customizations/surfaces";
+import { dataGridCustomizations } from "../../shared/theme/customizations/dataGrid";
 import { colorSchemes, typography, shadows, shape } from "../../shared/theme/themePrimitives";
 
 function AppTheme(props) {
@@ -27,7 +28,8 @@ function AppTheme(props) {
                   components: {
                       ...inputsCustomizations,
                       ...dataDisplayCustomizations,
-                      ...feedbackCustomizations,
+                      ...dataGridCustomizations,
+                      ...appealsCustomizations,
                       ...navigationCustomizations,
                       ...surfacesCustomizations,
                       ...themeComponents,

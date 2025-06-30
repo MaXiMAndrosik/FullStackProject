@@ -4,8 +4,8 @@ import { alpha } from "@mui/material/styles";
 import Stack from "@mui/material/Stack";
 import Box from "@mui/material/Box";
 import DeviceInfo from "../../shared/hooks/DeviceInfo";
-import SideMenu from "../../widgets/SideMenu/SideMenu";
-import AppNavbar from "../../widgets/Navbar/AppNavbar";
+import SideMenu from "../../widgets/Menu/SideMenu";
+import AppNavbar from "../../widgets/Menu/AppNavbar";
 import Header from "../../widgets/Header/Header";
 import Footer from "../../widgets/Footer/Footer";
 

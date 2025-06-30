@@ -72,7 +72,7 @@ export default function Footer() {
                         <FooterLink href="services" underline="hover">
                             Услуги
                         </FooterLink>
-                        <FooterLink href="feedback" underline="hover">
+                        <FooterLink href="appeals" underline="hover">
                             Обратная связь
                         </FooterLink>
                         <FooterLink href="about" underline="hover">

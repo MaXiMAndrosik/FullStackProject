@@ -75,11 +75,14 @@ export const logoutUser = createAsyncThunk(
 // Получение текущего пользователя
 export const fetchCurrentUser = createAsyncThunk(
     "auth/fetchUser",
-    async (_, { rejectWithValue }) => {
+    async (_, { dispatch,rejectWithValue }) => {
         try {
             const response = await apiClient.get("/user");
             return response.data;
         } catch (error) {
+            if (error.payload?.status === 401) {
+                dispatch(clearAuth());
+            }
             return rejectWithValue(error.response?.data);
         }
     }
@@ -97,6 +100,9 @@ export const initializeAuth = createAsyncThunk(
                 return true;
             } catch (error) {
                 authStorage.clearAuth();
+                if (error.payload?.status === 401) {
+                    dispatch(clearAuth());
+                }
                 return false;
             }
         }
@@ -115,6 +121,10 @@ const authSlice = createSlice({
         clearAuth: (state) => {
             authStorage.clearAuth();
             Object.assign(state, initialState);
+            state.user = null;
+            state.token = null;
+            state.isAuthenticated = false;
+            state.status = "idle";
             state.isInitialized = true;
         },
         clearAuthError: (state) => {
@@ -132,6 +142,16 @@ const authSlice = createSlice({
             } else {
                 sessionStorage.setItem("auth_token", token);
             }
+        },
+        markInitialized: (state) => {
+            state.isInitialized = true;
+        },
+        forceLogout: (state) => {
+            authStorage.clearAuth();
+            state.user = null;
+            state.token = null;
+            state.isAuthenticated = false;
+            state.status = "idle";
         },
     },
     extraReducers: (builder) => {
@@ -165,6 +185,7 @@ const authSlice = createSlice({
             .addCase(fetchCurrentUser.fulfilled, (state, action) => {
                 state.user = action.payload;
                 state.isAuthenticated = true;
+                state.isInitialized = true;
                 state.status = "succeeded";
                 state.error = null;
             })
@@ -173,6 +194,9 @@ const authSlice = createSlice({
             .addCase(initializeAuth.fulfilled, (state, action) => {
                 state.isAuthenticated = action.payload;
                 state.isInitialized = true;
+                if (action.payload && !state.user) {
+                    state.status = "loading";
+                }
             });
 
         // Обработка состояний загрузки
@@ -222,13 +246,20 @@ export const selectCurrentUser = (state) => state.auth.user;
 export const selectIsAuthenticated = (state) => state.auth.isAuthenticated;
 export const selectUserRole = (state) => state.auth.user?.role || null;
 export const selectIsAdmin = (state) => state.auth.user?.role === "admin";
+export const selectIsOwner = (state) => state.auth.user?.role === "owner";
 export const selectIsUser = (state) => state.auth.user?.role === "user";
-export const selectAuthStatus = (state) => state.auth.status;
 export const selectAuthError = (state) => state.auth.error;
-export const selectIsInitialized = (state) => state.auth.isInitialized;
 export const selectRememberMe = (state) => state.auth.rememberMe;
+export const selectIsInitialized = (state) => state.auth.isInitialized;
+export const selectAuthStatus = (state) => state.auth.status;
 
 // Экшены
-export const { setRememberMe, clearAuth, clearAuthError, setCredentials} = authSlice.actions;
+export const {
+    setRememberMe,
+    clearAuth,
+    clearAuthError,
+    setCredentials,
+    markInitialized,
+} = authSlice.actions;
 
 export default authSlice.reducer;

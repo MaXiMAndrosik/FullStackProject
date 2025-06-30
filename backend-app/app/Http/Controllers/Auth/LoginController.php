@@ -56,10 +56,7 @@ class LoginController extends Controller
     {
 
         $user = $request->user();
-
         $user->tokens()->delete();
-
-        Auth::logout();
 
         return response()->json([
             'message' => 'Успешный выход'

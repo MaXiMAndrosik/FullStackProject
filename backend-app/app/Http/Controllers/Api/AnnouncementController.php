@@ -84,7 +84,7 @@ class AnnouncementController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Объявление успешно удалено'
-            ]);
+            ], 200);
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,

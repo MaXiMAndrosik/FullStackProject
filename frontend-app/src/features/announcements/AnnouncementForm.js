@@ -26,7 +26,7 @@ export default function AnnouncementForm() {
     const [form, setForm] = useState({
         title: "",
         message: [""],
-        contacts: { phone: null, email: null }, 
+        contacts: { phone: null, email: null },
         signature: "",
         publish: new Date().toISOString(),
         date: null,
@@ -129,7 +129,7 @@ export default function AnnouncementForm() {
             })}
         >
             <Container
-                maxWidth="lg"
+                // maxWidth="lg"
                 sx={{
                     pt: { xs: 14, sm: 8 },
                     pb: { xs: 8, sm: 8 },

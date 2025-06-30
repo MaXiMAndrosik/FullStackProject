@@ -95,18 +95,6 @@ const services = [
     //         // website: "https://www.dzerzhinsk.gov.by/up-dzerzhinskoe-zhkkh",
     //     },
     // },
-    // {
-    //     icon: <ElectricalServicesIcon fontSize="small" />,
-    //     title: "Коммунальные услуги",
-    //     shortDescription: "Водоснабжение, отопление, электричество",
-    //     fullDescription:
-    //         "Горячее и холодное водоснабжение, водоотведение (канализация), газо-, электро-, теплоснабжение, снабжение сжиженным углеводородным газом от индивидуальных баллонных или резервуарных установок, обращение с твердыми коммунальными отходами",
-    //     provider: "УП «Дзержинское ЖКХ»",
-    //     contacts: {
-    //         telegram: "https://t.me/dzerzhkh",
-    //         website: "https://www.dzerzhinsk.gov.by/up-dzerzhinskoe-zhkkh",
-    //     },
-    // },
 ];
 
 const publicUtilities = {
@@ -151,10 +139,12 @@ const publicUtilities = {
             title: "Электроснабжение",
             description:
                 "Обеспечение бесперебойной подачи электроэнергии в соответствии с установленными нормами и стандартами",
-            provider: "ЖСПК «Зенитчик-4»",
+            provider:
+                "Дзержинский РЭС филиала «Столбцовские электросети» РУП «Минскэнерго»",
             contacts: {
-                telegram: "//t.me/zenitchik4",
-                website: "/",
+                telegram: "",
+                website:
+                    "https://web.minskenergo.by/filialy/filial-stolbtsovskie-elektricheskie-seti/kontakty-filiala-stolbtsovskie-elektricheskie-seti/",
             },
         },
     ],
@@ -220,7 +210,7 @@ export default function HousingServicesPage() {
             })}
         >
             <Container
-                maxWidth="lg"
+                // maxWidth="lg"
                 sx={{
                     pt: { xs: 14, sm: 8 },
                     pb: { xs: 8, sm: 8 },

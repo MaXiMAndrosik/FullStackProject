@@ -75,12 +75,12 @@ export default function UserMenu() {
             >
                 <MenuItem
                     component={Link}
-                    to="/user/settings"
+                    to="/user/profile"
                     onClick={handleClose}
                 >
                     Профиль
                 </MenuItem>
-                <Divider />
+                {/* <Divider />
                 <MenuItem
                     onClick={handleLogout}
                     sx={{
@@ -94,7 +94,7 @@ export default function UserMenu() {
                     <ListItemIcon>
                         <LogoutRoundedIcon fontSize="small" />
                     </ListItemIcon>
-                </MenuItem>
+                </MenuItem> */}
             </Menu>
         </Fragment>
     );

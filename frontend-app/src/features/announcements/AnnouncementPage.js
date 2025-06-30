@@ -63,7 +63,7 @@ export default function AnnouncementsPage() {
             })}
         >
             <Container
-                maxWidth="lg"
+                // maxWidth="lg"
                 sx={{
                     pt: { xs: 14, sm: 8 },
                     pb: { xs: 8, sm: 8 },

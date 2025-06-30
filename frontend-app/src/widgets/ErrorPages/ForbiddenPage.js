@@ -96,7 +96,7 @@ export default function ForbiddenPage() {
                         size="large"
                         startIcon={<ContactSupportIcon />}
                         component={RouterLink}
-                        to="/feedback"
+                        to="/appeals"
                         sx={{
                             px: 4,
                             py: 1.5,

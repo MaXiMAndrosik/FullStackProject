@@ -6,8 +6,8 @@ import AnnouncementPage from "../../features/announcements/AnnouncementPage";
 import AnnouncementForm from "../../features/announcements/AnnouncementForm";
 // Services
 import HousingServicesPage from "../../features/services/HousingServicesPage";
-// Feedback
-import FeedbackPage from "../../features/feedback/FeedbackPage";
+// Appeals
+import AppealsPage from "../../features/appeal/AppealPage";
 // About
 import AboutPage from "../../features/about/AboutPage";
 // ErrorPages
@@ -20,8 +20,17 @@ import SignIn from "../../features/auth/SignIn";
 import VerifyNotice from "../../features/auth/components/VerifyNotice";
 import ResendVerification from "../../features/auth/components/ResendVerification";
 import AuthCallback from "../../features/auth/components/AuthCallback";
+// User
+import UserProfile from "../../features/users/UsersProfiles";
 
-import UserPage from "../../features/user";
+
+// Admin
+import AdminServicesPage from "../../features/users/components/admin/AdminServicesPage";
+import AdminServicesAssignmentsPage from "../../features/users/components/admin/AdminServicesAssignmentsPage";
+
+
+
+import { AdminRoute, AdminOwnerUserRoute } from "./RoleRoute";
 
 export const routes = [
     {
@@ -50,31 +59,55 @@ export const routes = [
             },
             {
                 path: "/announcements/new",
-                element: <AnnouncementForm />,
+                element: (
+                    <AdminRoute>
+                        <AnnouncementForm />
+                    </AdminRoute>
+                ),
+            },
+            {
+                path: "/admin/services",
+                element: (
+                    <AdminRoute>
+                        <AdminServicesPage />
+                    </AdminRoute>
+                ),
+            },
+            {
+                path: "/admin/services-assignments",
+                element: (
+                    <AdminRoute>
+                        <AdminServicesAssignmentsPage />
+                    </AdminRoute>
+                ),
             },
             {
                 path: "/user/receipts",
-                element: <UserPage />,
+                element: <h1>/user/receipts page</h1>,
             },
             {
                 path: "/user/history",
-                element: <UserPage />,
+                element: <h1>/user/history page</h1>,
             },
             {
                 path: "/user/meters",
-                element: <UserPage />,
+                element: <h1>/user/meters page</h1>,
             },
             {
-                path: "/user/settings",
-                element: <UserPage />,
+                path: "/user/profile",
+                element: (
+                    <AdminOwnerUserRoute>
+                        <UserProfile />
+                    </AdminOwnerUserRoute>
+                ),
             },
             {
                 path: "/services",
                 element: <HousingServicesPage />,
             },
             {
-                path: "/feedback",
-                element: <FeedbackPage />,
+                path: "/appeals",
+                element: <AppealsPage />,
             },
             {
                 path: "about",

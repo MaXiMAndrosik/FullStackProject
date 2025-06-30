@@ -19,6 +19,7 @@ return new class extends Migration
             $table->enum('role', ['user', 'owner', 'admin'])->default('user');
             $table->timestamp('verification_sent_at')->nullable();
             $table->timestamp('email_verified_at')->nullable();
+            $table->enum('verification_status', ['unverified', 'pending', 'verified'])->default('unverified');
             $table->rememberToken();
             $table->timestamps();
         });

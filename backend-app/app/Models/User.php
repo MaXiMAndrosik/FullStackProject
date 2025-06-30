@@ -19,7 +19,11 @@ class User extends Authenticatable implements MustVerifyEmail
      * @var list<string>
      */
     protected $fillable = [
-        'name', 'email', 'password', 'role'
+        'name',
+        'email',
+        'password',
+        'role',
+        'verification_status'
     ];
 
     /**
@@ -45,5 +49,11 @@ class User extends Authenticatable implements MustVerifyEmail
             'password' => 'hashed',
             'role' => 'string'
         ];
+    }
+
+    public function owner()
+    {
+
+        return $this->hasOne(Owner::class);
     }
 }

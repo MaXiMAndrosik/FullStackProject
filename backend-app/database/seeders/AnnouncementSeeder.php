@@ -36,7 +36,7 @@ class AnnouncementSeeder extends Seeder
                 'necessity' => 'Обязательно для всех членов ЖСПК',
                 'agenda' => ['Выборы председателя собрания', 'Утверждение повестки дня', 'Разное'],
                 'documents' => [['name' => 'Проект сметы.pdf', 'url' => '/documents/smeta.pdf']],
-                'expiresAt' => Carbon::parse('2025-06-15T18:30:00')
+                'expiresAt' => Carbon::parse('2025-12-15T18:30:00')
             ],
             [
                 'title' => 'Письменное общее собрание членов ЖСПК',
@@ -58,7 +58,7 @@ class AnnouncementSeeder extends Seeder
                     'Утверждение плановой сметы доходов-расходов на 2022год.'
                 ],
                 'documents' => null,
-                'expiresAt' => Carbon::parse('2025-06-15T18:30:00')
+                'expiresAt' => Carbon::parse('2025-12-15T18:30:00')
             ],
             [
                 'title' => 'Уважаемые жильцы!',

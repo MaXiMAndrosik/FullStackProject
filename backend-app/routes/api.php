@@ -7,16 +7,23 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\VerificationController;
+use App\Http\Controllers\Auth\VerificationOwnerController;
 use App\Http\Controllers\Api\WeatherController;
 use App\Http\Controllers\Api\AnnouncementController;
-use App\Http\Controllers\Api\ContactRequestController;
+use App\Http\Controllers\Api\AppealsController;
+use App\Http\Controllers\Api\OwnerController;
+use App\Http\Controllers\Api\Admin\ServiceController;
+use App\Http\Controllers\Api\Admin\ServiceAssignmentController;
+use App\Http\Controllers\Api\Admin\TariffController;
+use App\Http\Controllers\Api\Admin\ApartmentController;
+use App\Http\Controllers\Api\Admin\AssignmentTariffController;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Redis;
 
 Route::prefix('auth')->group(function () {
     Route::post('/register', [RegisterController::class, 'register']);
     Route::post('/login', [LoginController::class, 'login'])->middleware('throttle:5,1');
-    Route::post('/logout', [LoginController::class, 'logout']);
+    Route::post('/logout', [LoginController::class, 'logout'])->middleware('auth:sanctum');
 });
 
 Route::get('/email/verify/{id}/{hash}', [VerificationController::class, 'verify'])
@@ -31,26 +38,61 @@ Route::get('/weather', WeatherController::class);
 // Роуты для получения обьявлений для всех
 Route::get('/announcements', [AnnouncementController::class, 'index']);
 
-// Роуты для аутентифецированных пользователей // 'user', 'owner', 'admin'
+
+
+
+// Роуты для аутентифицированных пользователей // 'user', 'owner', 'admin'
 Route::middleware(['auth:sanctum', 'verified'])->group(function () {
+
+    // Обращения пользователей
+    Route::post('/appeals', [AppealsController::class, 'store']);
 
     // Получение данных о себе
     Route::get('/user', [UserController::class, 'current']);
-    // Обращения пользователей
-    Route::post('/feedback', [ContactRequestController::class, 'store'])->middleware('role:user,owner');
+    // Удаление аккаунта
+    Route::delete('/user', [UserController::class, 'destroy']);
 
+
+    // Роуты для пользователей 'users' для верификации собственника
+    Route::post('/user/verification-request', [VerificationOwnerController::class, 'store'])->middleware('role:user');
+    Route::get('/user/my-verification-request', [VerificationOwnerController::class, 'getMyRequest'])->middleware('role:user');
+
+
+
+    // ---------------------------------------------------------------------------------------------------------------------------
     // Роуты для собственников 'owner'
-    Route::middleware(['auth:sanctum', 'verified'])->group(function () {
-        // Route::get('/user', [UserController::class, 'current'])->middleware('role:owner');
+    // ---------------------------------------------------------------------------------------------------------------------------
+    Route::middleware(['auth:sanctum', 'verified', 'role:owner'])->group(function () {
+        // Получение данных о собственнике 
+        Route::get('/owner/by-user/{user_id}', [OwnerController::class, 'getByUserId']);
+        // Получение данных о собственнике с данными о жилом помещении
+        Route::get('/owner/profile', [OwnerController::class, 'profile']);
     });
 
-
+    // ---------------------------------------------------------------------------------------------------------------------------
     // Роуты для администраторов 'admin'
-    // Создание и удаление объявлений
-    Route::post('/announcements', [AnnouncementController::class, 'store'])->middleware('role:admin');
-    Route::delete('/announcements/{id}', [AnnouncementController::class, 'destroy'])->middleware('role:admin');
+    // ---------------------------------------------------------------------------------------------------------------------------
+    Route::middleware(['auth:sanctum', 'verified', 'role:admin'])->group(function () {
+
+        // Создание и удаление объявлений
+        Route::post('/announcements', [AnnouncementController::class, 'store']);
+        Route::delete('/announcements/{id}', [AnnouncementController::class, 'destroy']);
+
+        // Создание, удаление и редактирование сервисов ЖКУ и тарифов к ним
+        Route::apiResource('/admin/services', ServiceController::class)->except(['show']);
+        Route::put('/admin/services/{service}/toggle-active', [ServiceController::class, 'toggleActive']);
+        Route::apiResource('/admin/tariffs', TariffController::class);
+
+        // Создание, удаление и редактирование сервисов отдельных услуг и тарифов к ним
+        Route::apiResource('/admin/service-assignments', ServiceAssignmentController::class)->except(['show']);
+        Route::put('/admin/service-assignments/{service_assignment}/toggle-active', [ServiceAssignmentController::class, 'toggleActive']);
+        Route::apiResource('/admin/assignment-tariffs', AssignmentTariffController::class);
 
 
+
+
+        Route::apiResource('/admin/apartments', ApartmentController::class);
+    });
 });
 
 

@@ -2,7 +2,6 @@ import { useNavigate } from "react-router-dom";
 import { useRoutes } from "react-router-dom";
 import { routes } from "./routes";
 
-// Глобальная переменная (не идеально, но работает)
 let globalNavigate;
 
 function AppRouter() {
