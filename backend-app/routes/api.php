@@ -67,6 +67,10 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
         Route::get('/owner/by-user/{user_id}', [OwnerController::class, 'getByUserId']);
         // Получение данных о собственнике с данными о жилом помещении
         Route::get('/owner/profile', [OwnerController::class, 'profile']);
+        // Получение данных о действующих услугах и тарифах для собственника
+        Route::get('/owner/services', [ServiceController::class, 'show']);
+        Route::get('/owner/service-assignments', [ServiceAssignmentController::class, 'show']);
+
     });
 
     // ---------------------------------------------------------------------------------------------------------------------------

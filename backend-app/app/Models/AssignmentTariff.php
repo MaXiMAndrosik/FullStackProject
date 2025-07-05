@@ -27,4 +27,13 @@ class AssignmentTariff extends Model
     {
         return $this->belongsTo(ServiceAssignment::class);
     }
+
+    public function scopeActive($query)
+    {
+        return $query->where('start_date', '<=', now())
+            ->where(function ($q) {
+                $q->where('end_date', '>=', now())
+                    ->orWhereNull('end_date');
+            });
+    }
 }

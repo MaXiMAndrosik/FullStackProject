@@ -23,6 +23,8 @@ return new class extends Migration
             $table->timestamps();
 
             // Индексы для оптимизации
+            $table->index('apartment_id');
+            $table->index('entrance');
             $table->index('is_active');
 
             $table->comment('Индивидуальные настройки услуг для квартир/подъездов');

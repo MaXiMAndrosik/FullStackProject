@@ -97,7 +97,6 @@ const UsersProfiles = () => {
         if (isOwner) {
             setLoading(true);
             apiClient
-                // .get(`/owner/by-user/${authUser.id}`)
                 .get(`/owner/profile`)
                 .then((response) => {
                     setOwnerData(response.data);

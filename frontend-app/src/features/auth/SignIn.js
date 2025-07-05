@@ -3,6 +3,7 @@ import CssBaseline from "@mui/material/CssBaseline";
 import Stack from "@mui/material/Stack";
 import SignInCard from "./components/SignInCard";
 import Content from "./components/Content";
+import AuthSideContent from "./components/AuthSideContent";
 
 export default function SignIn(props) {
     return (
@@ -55,7 +56,8 @@ export default function SignIn(props) {
                             m: "auto",
                         }}
                     >
-                        <Content />
+                        <AuthSideContent />
+                        {/* <Content /> */}
                         <SignInCard />
                     </Stack>
                 </Stack>

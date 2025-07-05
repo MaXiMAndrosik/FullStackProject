@@ -1,21 +1,24 @@
 import { useState } from "react";
-import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
-import CssBaseline from "@mui/material/CssBaseline";
-import Divider from "@mui/material/Divider";
-import FormLabel from "@mui/material/FormLabel";
-import FormControl from "@mui/material/FormControl";
-import Link from "@mui/material/Link";
-import TextField from "@mui/material/TextField";
-import Typography from "@mui/material/Typography";
-import Stack from "@mui/material/Stack";
+import {
+    Stack,
+    Box,
+    Button,
+    Divider,
+    FormLabel,
+    FormControl,
+    Link,
+    TextField,
+    Typography,
+    CssBaseline,
+} from "@mui/material";
 import MuiCard from "@mui/material/Card";
 import { styled } from "@mui/material/styles";
-import Content from "./components/Content";
 import { Logo } from "../../shared/ui/Logo";
 import { useDispatch } from "react-redux";
 import { registerUser } from "../auth/model/authSlice";
 import { useNavigate } from "react-router-dom";
+import Content from "./components/Content";
+import AuthSideContent from "./components/AuthSideContent";
 
 const Card = styled(MuiCard)(({ theme }) => ({
     display: "flex",
@@ -179,7 +182,8 @@ export default function SignUp(props) {
                     },
                 }}
             >
-                <Content />
+                <AuthSideContent />
+                {/* <Content /> */}
                 <Card variant="outlined">
                     <Logo />
                     <Typography

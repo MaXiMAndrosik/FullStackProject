@@ -135,6 +135,51 @@ class ServiceController extends Controller
         return response()->noContent(201);
     }
 
+    public function show(Request $request)
+    {
+
+        try {
+            // Получаем все активные услуги с их текущими тарифами
+            $services = Service::active()
+                ->with(['tariffs' => function ($query) {
+                    $query->current();
+                }])
+                ->get();
+
+
+            // Форматируем данные для ответа
+            $formattedServices = $services->map(function ($service) {
+                return [
+                    'id' => $service->id,
+                    'name' => $service->name,
+                    'type' => $service->type,
+                    'is_active' => $service->is_active,
+                    'current_tariff' => $service->tariffs->first() ? [
+                        'id' => $service->tariffs->first()->id,
+                        'rate' => $service->tariffs->first()->rate,
+                        'unit' => $service->tariffs->first()->unit,
+                        'start_date' => $service->tariffs->first()->start_date->format('Y-m-d'),
+                    ] : null,
+                ];
+            });
+
+            Log::debug('ServiceController show', ['Service' => $formattedServices]);
+
+            return response()->json([
+                'success' => true,
+                'data' => $formattedServices
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('ServiceController show error: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Ошибка при получении услуг',
+                'error' => $e->getMessage()
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
     protected function getDefaultUnit($calculationType): string
     {
         return match ($calculationType) {

@@ -36,6 +36,7 @@ import {
     ManageAccounts as ManageAccountsIcon,
     Tune as TuneIcon,
     Badge as BadgeIcon,
+    AttachMoney as AttachMoneyIcon,
 } from "@mui/icons-material";
 
 export default function MenuContent() {
@@ -46,8 +47,13 @@ export default function MenuContent() {
     const { announcements } = useAds();
     const hasAds = announcements && announcements.length > 0;
 
+    const [openUsersServices, setOpenUsersServices] = useState(false);
     const [openServices, setOpenServices] = useState(false);
     const [openOffice, setOpenOffice] = useState(false);
+
+    const handleUsersServicesClick = () => {
+        setOpenUsersServices(!openUsersServices);
+    };
 
     const handleServicesClick = () => {
         setOpenServices(!openServices);
@@ -55,23 +61,6 @@ export default function MenuContent() {
 
     const handleOfficeClick = () => {
         setOpenOffice(!openOffice);
-    };
-
-    const [openSections, setOpenSections] = useState({
-        services: false,
-        persons: false,
-        office: false,
-        // другие разделы
-    });
-
-    const toggleSection = (section) => {
-        setOpenSections((prev) => {
-            const newState = Object.keys(prev).reduce((acc, key) => {
-                acc[key] = key === section ? !prev[key] : false;
-                return acc;
-            }, {});
-            return newState;
-        });
     };
 
     // Функция для обработки выхода
@@ -193,14 +182,26 @@ export default function MenuContent() {
                             <ListItemText secondary="Показания счетчиков" />
                         </ListItemButton>
                     </ListItem>
-                    {/* Настройки профиля */}
+                    {/* Тарифы и услуги */}
                     <ListItem
                         disablePadding
-                        sx={{
-                            display: "block",
-                            borderTop: "1px solid rgba(0, 0, 0, 0.12)",
-                            paddingTop: 1,
-                        }}
+                        sx={{ display: "block", paddingLeft: 2 }}
+                    >
+                        <ListItemButton
+                            component={Link}
+                            to="/owner/services"
+                            selected={location.pathname === "/owner/services"}
+                        >
+                            <ListItemIcon>
+                                <AttachMoneyIcon />{" "}
+                            </ListItemIcon>
+                            <ListItemText secondary="Тарифы и услуги" />
+                        </ListItemButton>
+                    </ListItem>
+                    {/* Профиль */}
+                    <ListItem
+                        disablePadding
+                        sx={{ display: "block", paddingLeft: 2 }}
                     >
                         <ListItemButton
                             component={Link}
@@ -208,9 +209,9 @@ export default function MenuContent() {
                             selected={location.pathname === "/user/profile"}
                         >
                             <ListItemIcon>
-                                <ManageAccountsIcon />
+                                <AccountCircleIcon />
                             </ListItemIcon>
-                            <ListItemText secondary="Настройки профиля" />
+                            <ListItemText secondary="Профиль" />
                         </ListItemButton>
                     </ListItem>
                 </Collapse>
@@ -282,6 +283,52 @@ export default function MenuContent() {
                     </ListItem>
                 )}
 
+                {/* Настройки пользователей */}
+                {userRole === "admin" && (
+                    <ListItem
+                        disablePadding
+                        sx={{
+                            display: "block",
+                            borderTop: "1px solid rgba(0, 0, 0, 0.12)",
+                            paddingTop: 1,
+                        }}
+                    >
+                        <ListItemButton onClick={handleUsersServicesClick}>
+                            <ListItemIcon>
+                                <ManageAccountsIcon />
+                            </ListItemIcon>
+                            <ListItemText secondary="Настройки пользователей" />
+                            {openUsersServices ? (
+                                <ExpandLessIcon />
+                            ) : (
+                                <ExpandMoreIcon />
+                            )}
+                        </ListItemButton>
+                    </ListItem>
+                )}
+                {/* Вложенные пункты */}
+                <Collapse in={openUsersServices} timeout="auto" unmountOnExit>
+                    {/* Настройки  */}
+                    <ListItem
+                        disablePadding
+                        sx={{
+                            display: "block",
+                            paddingLeft: 2,
+                        }}
+                    >
+                        <ListItemButton
+                            component={Link}
+                            to="/admin/services"
+                            selected={location.pathname === "/admin/services"}
+                        >
+                            <ListItemIcon>
+                                <SettingsIcon />
+                            </ListItemIcon>
+                            <ListItemText secondary="Настройки ЖКУ" />
+                        </ListItemButton>
+                    </ListItem>
+                </Collapse>
+
                 {/* Настройки услуг и тарифов */}
                 {userRole === "admin" && (
                     <ListItem
@@ -296,7 +343,7 @@ export default function MenuContent() {
                             <ListItemIcon>
                                 <TuneIcon />
                             </ListItemIcon>
-                            <ListItemText secondary="Настройки услуг и тарифов" />
+                            <ListItemText secondary="Настройки тарифов и услуг" />
                             {openServices ? (
                                 <ExpandLessIcon />
                             ) : (
@@ -402,17 +449,6 @@ export default function MenuContent() {
                         </ListItemButton>
                     </ListItem>
                 )}
-
-                <ListItemIcon>
-                    <ManageAccountsIcon />
-                </ListItemIcon>
-
-                <ListItemIcon>
-                    <TuneIcon />
-                </ListItemIcon>
-                <ListItemIcon>
-                    <AccountCircleIcon />
-                </ListItemIcon>
 
                 <ListItemIcon>
                     <BadgeIcon />

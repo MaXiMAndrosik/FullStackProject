@@ -191,7 +191,7 @@ const AssignmentsTariffsTable = ({
                     color="primary"
                     sx={{ fontWeight: "bold" }}
                 >
-                    ЖКУ
+                    услуг
                 </Typography>
             </Typography>
             <DataGrid

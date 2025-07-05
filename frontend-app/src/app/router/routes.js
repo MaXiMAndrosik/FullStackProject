@@ -20,6 +20,10 @@ import SignIn from "../../features/auth/SignIn";
 import VerifyNotice from "../../features/auth/components/VerifyNotice";
 import ResendVerification from "../../features/auth/components/ResendVerification";
 import AuthCallback from "../../features/auth/components/AuthCallback";
+
+// Owner
+import OwnerServicesPage from "../../features/users/components/owner/OwnerServicesPage";
+
 // User
 import UserProfile from "../../features/users/UsersProfiles";
 
@@ -30,7 +34,7 @@ import AdminServicesAssignmentsPage from "../../features/users/components/admin/
 
 
 
-import { AdminRoute, AdminOwnerUserRoute } from "./RoleRoute";
+import { AdminRoute, AdminOwnerUserRoute, OwnerRoute } from "./RoleRoute";
 
 export const routes = [
     {
@@ -92,6 +96,14 @@ export const routes = [
             {
                 path: "/user/meters",
                 element: <h1>/user/meters page</h1>,
+            },
+            {
+                path: "/owner/services",
+                element: (
+                    <OwnerRoute>
+                        <OwnerServicesPage />
+                    </OwnerRoute>
+                ),
             },
             {
                 path: "/user/profile",

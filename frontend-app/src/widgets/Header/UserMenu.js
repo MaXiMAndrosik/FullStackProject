@@ -1,17 +1,12 @@
 import { useState, Fragment  } from "react";
-import { useDispatch } from "react-redux"; 
-import { logoutUser } from "../../features/auth/model/authSlice"; 
 import { Link } from "react-router-dom";
 import { styled } from "@mui/material/styles";
-import Divider, { dividerClasses } from "@mui/material/Divider";
+import { dividerClasses } from "@mui/material/Divider";
 import Menu from "@mui/material/Menu";
 import MuiMenuItem from "@mui/material/MenuItem";
 import Avatar from "@mui/material/Avatar";
 import { paperClasses } from "@mui/material/Paper";
 import { listClasses } from "@mui/material/List";
-import ListItemText from "@mui/material/ListItemText";
-import ListItemIcon, { listItemIconClasses } from "@mui/material/ListItemIcon";
-import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
 import MenuButton from "../../shared/ui/MenuButton";
 
 const MenuItem = styled(MuiMenuItem)({
@@ -20,7 +15,6 @@ const MenuItem = styled(MuiMenuItem)({
 
 export default function UserMenu() {
     const [anchorEl, setAnchorEl] = useState(null);
-    const dispatch = useDispatch();
     const open = Boolean(anchorEl);
 
     const handleClick = (event) => {
@@ -30,12 +24,6 @@ export default function UserMenu() {
     // Функция для закрытия меню
     const handleClose = () => {
         setAnchorEl(null);
-    };
-
-    // Функция для обработки выхода
-    const handleLogout = () => {
-        dispatch(logoutUser());
-        handleClose();
     };
 
     return (
@@ -80,21 +68,6 @@ export default function UserMenu() {
                 >
                     Профиль
                 </MenuItem>
-                {/* <Divider />
-                <MenuItem
-                    onClick={handleLogout}
-                    sx={{
-                        [`& .${listItemIconClasses.root}`]: {
-                            ml: "auto",
-                            minWidth: 0,
-                        },
-                    }}
-                >
-                    <ListItemText>Выйти</ListItemText>
-                    <ListItemIcon>
-                        <LogoutRoundedIcon fontSize="small" />
-                    </ListItemIcon>
-                </MenuItem> */}
             </Menu>
         </Fragment>
     );

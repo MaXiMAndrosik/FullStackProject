@@ -23,8 +23,8 @@ return new class extends Migration
             $table->comment('Характеристики квартир');
 
             // Индексы для часто используемых полей
+            $table->index('number');
             $table->index('entrance');
-            $table->index('floor');
         });
     }
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\ServiceAssignment;
 use App\Models\AssignmentTariff;
+use App\Models\Owner;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -151,6 +152,99 @@ class ServiceAssignmentController extends Controller
         $service_assignment->update(['is_active' => !$service_assignment->is_active]);
         Log::debug('ServiceAssignmentController toggleActive', ['ServiceAssignment' => $service_assignment]);
         return response()->noContent(201);
+    }
+
+    public function show(Request $request)
+    {
+        $user = $request->user();
+
+        if ($user->role != "owner") {
+            return response()->json([
+                'success' => false,
+                'message' => 'Доступ запрещен. Только для собственников.'
+            ], 403);
+        }
+
+        // Получаем данные за 2 запроса:
+        // 1. Получаем владельцев с квартирами
+        $ownersWithApartments = Owner::where('user_id', $user->id)
+            ->with(['apartment' => function ($query) {
+                $query->select('id', 'number', 'entrance');
+            }])
+            ->get();
+
+        // Если нет квартир, возвращаем пустой список
+        if ($ownersWithApartments->isEmpty()) {
+            return response()->json([
+                'success' => true,
+                'data' => []
+            ]);
+        }
+
+        // Собираем данные для запроса услуг
+        $apartmentIds = [];
+        $entrances = [];
+
+        foreach ($ownersWithApartments as $owner) {
+            if ($owner->apartment) {
+                $apartmentIds[] = $owner->apartment->id;
+                $entrances[] = $owner->apartment->entrance;
+            }
+        }
+
+        // Убираем дубликаты
+        $apartmentIds = array_unique($apartmentIds);
+        $entrances = array_unique($entrances);
+
+        Log::debug('ServiceAssignmentController show', [
+            'apartmentIds' => $apartmentIds,
+            'entrances' => $entrances
+        ]);
+
+        // 2. Получаем услуги с тарифами
+        $services = ServiceAssignment::where('is_active', true)
+            ->where(function ($query) use ($apartmentIds, $entrances) {
+                $query->where(function ($q) use ($apartmentIds) {
+                    $q->where('scope', 'apartment')
+                        ->whereIn('apartment_id', $apartmentIds);
+                })
+                    ->orWhere(function ($q) use ($entrances) {
+                        $q->where('scope', 'entrance')
+                            ->whereIn('entrance', $entrances);
+                    });
+            })
+            ->with([
+                'apartment:id,number,entrance',
+                'tariffs' => function ($query) {
+                    $query->active()
+                        ->latest('start_date')
+                        ->take(1);
+                }
+            ])
+            ->get();
+
+        // Форматируем ответ
+        $formattedServices = $services->map(function ($assignment) {
+            $currentTariff = $assignment->tariffs->first();
+
+            return [
+                'id' => $assignment->id,
+                'name' => $assignment->name,
+                'type' => $assignment->type,
+                'current_tariff' => $currentTariff ? [
+                    'rate' => $currentTariff->rate,
+                    'unit' => $currentTariff->unit,
+                    'start_date' => $currentTariff->start_date,
+                ] : null,
+            ];
+        });
+
+        Log::info('ServiceAssignmentController show', ['ServiceAssignment' => $services]);
+
+        return response()->json([
+            'success' => true,
+            'data' => $formattedServices
+        ]);
     }
 
     protected function getDefaultUnit($calculationType): string
