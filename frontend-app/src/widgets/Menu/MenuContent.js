@@ -282,7 +282,7 @@ export default function MenuContent() {
                     </ListItem>
                 )}
 
-                {/* Администрирование */}
+                {/* Настройки услуг и тарифов */}
                 {userRole === "admin" && (
                     <ListItem
                         disablePadding
@@ -296,7 +296,7 @@ export default function MenuContent() {
                             <ListItemIcon>
                                 <TuneIcon />
                             </ListItemIcon>
-                            <ListItemText secondary="Администрирование" />
+                            <ListItemText secondary="Настройки услуг и тарифов" />
                             {openServices ? (
                                 <ExpandLessIcon />
                             ) : (

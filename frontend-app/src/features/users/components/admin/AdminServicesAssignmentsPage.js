@@ -8,9 +8,10 @@ import {
 import { format } from "date-fns";
 
 // Импортируем UI-компоненты диалогов
-import AssignmentDialog from "./ui/AssignmentDialog";
+import AssignmentDialog from "./ui/AssignmentServicesDialog";
 import AssignmentsServicesTable from "./ui/AssignmentsServicesTable";
-import TariffsTable from "./ui/TariffsTable";
+import AssignmentsTariffsTable from "./ui/AssignmentsTariffsTable";
+import AssignmentTariffDialog from "./ui/AssignmentTariffDialog";
 
 const AdminServicesAssignmentsPage = () => {
     const [assignmentsServices, setAssignmentsServices] = useState([]);
@@ -164,26 +165,18 @@ const AdminServicesAssignmentsPage = () => {
     const handleAssignmentSubmit = async (e) => {
         e.preventDefault();
         const data = new FormData(e.target);
+        const baseData = Object.fromEntries(data.entries());
+        baseData.is_active = baseData.is_active === "on";
 
         try {
             if (currentAssignment) {
-                // Редактирование существующей услуги
+                // Для редактирования отправляем только разрешенные поля
                 const assignmentData = {
-                    scope: data.get("scope") || null,
-                    apartment_id:
-                        assignmentScope === "apartment" &&
-                        selectedApartments.length > 0
-                            ? selectedApartments
-                            : null,
-                    entrance:
-                        assignmentScope === "entrance" &&
-                        selectedEntrances.length > 0
-                            ? selectedEntrances
-                            : null,
-                    name: data.get("name") || null,
-                    type: data.get("type") || null,
-                    calculation_type: data.get("calculation_type") || null,
-                    is_active: data.get("is_active") === "on",
+                    name: baseData.name,
+                    type: baseData.type,
+                    unit: baseData.unit || null,
+                    calculation_type: baseData.calculation_type,
+                    is_active: baseData.is_active,
                 };
 
                 await apiClient.put(
@@ -192,53 +185,38 @@ const AdminServicesAssignmentsPage = () => {
                 );
                 showSuccess("Услуга обновлена");
             } else {
-                const serviceId = parseInt(data.get("service_id"));
-                const isEnabled = data.get("is_active") === "on";
-                const startDate = data.get("start_date") || null;
-                const endDate = data.get("end_date") || null;
-
+                // Для создания подготавливаем массив назначений
                 const assignmentsToCreate = [];
 
-                // Для подъездов
                 if (assignmentScope === "entrance") {
                     selectedEntrances.forEach((entrance) => {
                         assignmentsToCreate.push({
-                            service_id: serviceId,
+                            ...baseData,
                             scope: "entrance",
                             entrance: entrance,
-                            is_active: isEnabled,
-                            start_date: startDate,
-                            end_date: endDate,
+                            apartment_id: null,
                         });
                     });
-                }
-                // Для квартир
-                else {
-                    selectedApartments.forEach((apartmentId) => {
+                } else {
+                    selectedApartments.forEach((apartment_id) => {
                         assignmentsToCreate.push({
-                            service_id: serviceId,
+                            ...baseData,
                             scope: "apartment",
-                            apartment_id: apartmentId,
-                            is_active: isEnabled,
-                            start_date: startDate,
-                            end_date: endDate,
+                            apartment_id: apartment_id,
+                            entrance: null,
                         });
                     });
                 }
 
-                // Проверка, что есть что создавать
                 if (assignmentsToCreate.length === 0) {
-                    showError(
-                        "Выберите хотя бы один объект (подъезд или квартиру)"
-                    );
+                    showError("Выберите хотя бы один объект");
                     return;
                 }
 
-                // Отправляем запрос
-                await apiClient.post("/admin/service-assignments/bulk", {
-                    assignments: assignmentsToCreate,
-                });
-
+                await apiClient.post(
+                    "/admin/service-assignments",
+                    assignmentsToCreate
+                );
                 showSuccess(`Создано ${assignmentsToCreate.length} услуг`);
             }
 
@@ -299,7 +277,7 @@ const AdminServicesAssignmentsPage = () => {
 
         try {
             await apiClient.put(
-                `/admin/tariffs/${currentTariff.id}`,
+                `/admin/assignment-tariffs/${currentTariff.id}`,
                 tariffData
             );
             showSuccess("Тариф сохранен");
@@ -313,7 +291,7 @@ const AdminServicesAssignmentsPage = () => {
     const handleDeleteTariff = async (id) => {
         if (window.confirm("Вы уверены, что хотите удалить этот тариф?")) {
             try {
-                await apiClient.delete(`/admin/tariffs/${id}`);
+                await apiClient.delete(`/admin/assignment-tariffs/${id}`);
                 showSuccess("Тариф удален");
                 fetchAssignmentsServices();
             } catch (error) {
@@ -348,15 +326,16 @@ const AdminServicesAssignmentsPage = () => {
             >
                 <AssignmentsServicesTable
                     assignments={allAssignmentsServices}
+                    apartments={apartments}
                     onAdd={() => handleAssignmentOpen()}
                     onEdit={handleAssignmentOpen}
                     onDelete={handleAssignmentDelete}
                     onToggle={handleAssignmentToggle}
                 />
 
-                <TariffsTable
+                <AssignmentsTariffsTable
                     tariffs={allTariffs}
-                    services={allAssignmentsServices}
+                    assignments={allAssignmentsServices}
                     onAdd={() => handleOpenTariff()}
                     onEdit={handleOpenTariff}
                     onDelete={handleDeleteTariff}
@@ -379,6 +358,16 @@ const AdminServicesAssignmentsPage = () => {
                 setSelectedApartments={setSelectedApartments}
                 calculationType={calculationType}
                 setCalculationType={setCalculationType}
+            />
+
+            <AssignmentTariffDialog
+                open={openTariffs}
+                onClose={handleCloseTariff}
+                currentTariff={currentTariff}
+                onSubmit={handleSubmitTariff}
+                services={allAssignmentsServices}
+                apartments={apartments}
+                entrances={entrances}
             />
         </Box>
     );

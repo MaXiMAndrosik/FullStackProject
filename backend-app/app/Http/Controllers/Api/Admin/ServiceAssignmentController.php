@@ -9,74 +9,104 @@ use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Request;
 
 class ServiceAssignmentController extends Controller
 {
     public function index()
     {
-        return ServiceAssignment::with('tariffs')->get();
+        $assignments = ServiceAssignment::with('tariffs')->get();
+
+        return $assignments->map(function ($assignment) {
+            $data = $assignment->toArray();
+
+            if ($assignment->scope === 'apartment' && $assignment->apartment) {
+                $data['apartment_number'] = $assignment->apartment->number;
+            }
+
+            return $data;
+        });
+
+        // return ServiceAssignment::with('tariffs')->get();
     }
 
     public function store(Request $request)
     {
+
+        // Валидация для создания новых назначений
         $validated = $request->validate([
             '*.scope' => 'required|in:apartment,entrance',
             '*.apartment_id' => 'nullable|required_if:*.scope,apartment|exists:apartments,id',
-            '*.entrance' => 'nullable|required_if:*.scope,entrance|integer',
+            '*.entrance' => 'nullable|required_if:*.scope,entrance|integer|min:1',
             '*.name' => 'required|string|max:100',
-            '*.type' => 'required|in:main,utility,additional,other',
-            '*.calculation_type' => 'required|in:fixed,meter,area',
+            '*.type' => ['required', Rule::in(['main', 'utility', 'additional', 'other'])],
+            '*.calculation_type' => ['required', Rule::in(['fixed', 'meter', 'area'])],
+            '*.unit' => 'nullable|string|in:m3,gcal,kwh',
             '*.is_active' => 'boolean',
         ]);
 
-        $created = [];
-        DB::transaction(function () use ($validated, &$created) {
+        DB::transaction(function () use ($validated) {
             foreach ($validated as $item) {
                 $assignment = ServiceAssignment::create($item);
-                $created[] = $assignment;
+                Log::debug('ServiceAssignmentController store', [
+                    'ServiceAssignment::create' => $assignment
+                ]);
+
+                $unit = $item['unit'] ?? $this->getDefaultUnit($item['calculation_type']);
+
+                $tariff = AssignmentTariff::create([
+                    'assignment_id' => $assignment->id,
+                    'rate' => 0.0000,
+                    'unit' => $unit,
+                    'start_date' => Carbon::today(),
+                    'end_date' => null
+                ]);
+
+                Log::debug('ServiceAssignmentController store', [
+                    'AssignmentTariff::create' => $tariff
+                ]);
             }
         });
 
-        return response()->json($created, 201);
+        return response()->noContent(201);
     }
 
     public function update(Request $request, ServiceAssignment $service_assignment)
     {
 
-        Log::debug('ServiceAssignmentController update', ['ServiceAssignment' => $service_assignment]);
-
-        $originalData = $service_assignment->toArray();
-
+        // Запрещаем изменение привязки и объекта
         $validated = $request->validate([
-            'scope' => ['required', Rule::in(['apartment', 'entrance'])],
-            'apartment_id' => [
-                'nullable',
-                'required_if:scope,apartment',
-                'exists:apartments,id'
-            ],
-            'entrance' => [
-                'nullable',
-                'required_if:scope,entrance',
-                'integer',
-                'min:1'
-            ],
             'name' => 'required|string|max:100',
             'type' => ['required', Rule::in(['main', 'utility', 'additional', 'other'])],
             'calculation_type' => ['required', Rule::in(['fixed', 'meter', 'area'])],
+            'unit' => 'nullable|string|in:m3,gcal,kwh',
             'is_active' => 'sometimes|boolean',
         ]);
 
-        Log::debug('ServiceAssignmentController update', ['Validated' => $validated]);
+        Log::debug('ServiceAssignmentController update', [
+            'validated' => $validated
+        ]);
 
-        $newUnit = $this->getDefaultUnit($validated['calculation_type'] ?? $service_assignment->calculation_type);
+        // Определяем новую единицу измерения
+        $newUnit = $validated['unit'] ?? $this->getDefaultUnit($validated['calculation_type']);
 
-        DB::transaction(function () use ($service_assignment, $validated, $newUnit, $originalData) {
-            $service_assignment->update($validated);
+        DB::transaction(function () use ($service_assignment, $validated, $newUnit) {
+            // Сохраняем оригинальный тип расчета ДО обновления
+            $originalCalculationType = $service_assignment->calculation_type;
 
-            if (($validated['calculation_type'] ?? null) !== $originalData['calculation_type']) {
-                // Находим текущий активный тариф
-                $activeTariff = AssignmentTariff::where('service_id', $service_assignment->id)
+            // Обновляем только разрешенные поля
+            $service_assignment->update([
+                'name' => $validated['name'],
+                'type' => $validated['type'],
+                'calculation_type' => $validated['calculation_type'],
+                'is_active' => $validated['is_active'] ?? $service_assignment->is_active,
+            ]);
+
+            // Проверяем изменение типа расчета
+            if ($validated['calculation_type'] !== $originalCalculationType) {
+                // Ищем активный тариф
+                $activeTariff = $service_assignment->tariffs()
                     ->where(function ($query) {
                         $query->whereNull('end_date')
                             ->orWhere('end_date', '>', now());
@@ -85,22 +115,21 @@ class ServiceAssignmentController extends Controller
                     ->first();
 
                 if ($activeTariff) {
-                    // Закрываем старый тариф вчерашним днем
+                    // Закрываем старый тариф
                     $activeTariff->update(['end_date' => Carbon::yesterday()]);
 
-                    // Создаем новый тариф с обновленной единицей, начиная с сегодняшнего дня
-                    AssignmentTariff::create([
-                        'service_id' => $service_assignment->id,
+                    // Создаем новый тариф с обновленной единицей
+                    $service_assignment->tariffs()->create([
                         'rate' => $activeTariff->rate,
+                        'unit' => $newUnit,
                         'start_date' => Carbon::today(),
-                        'end_date' => null,
-                        'unit' => $newUnit
+                        'end_date' => null
                     ]);
                 }
             }
         });
 
-        return response()->noContent(201);
+        return response()->noContent(204);
     }
 
     public function destroy(ServiceAssignment $service_assignment)
@@ -111,7 +140,7 @@ class ServiceAssignmentController extends Controller
 
         // Удаляем саму услугу
         $service_assignment->delete();
-        return response()->noContent();
+        return response()->noContent(204);
     }
 
     /**
@@ -121,7 +150,7 @@ class ServiceAssignmentController extends Controller
     {
         $service_assignment->update(['is_active' => !$service_assignment->is_active]);
         Log::debug('ServiceAssignmentController toggleActive', ['ServiceAssignment' => $service_assignment]);
-        return response()->json($service_assignment);
+        return response()->noContent(201);
     }
 
     protected function getDefaultUnit($calculationType): string

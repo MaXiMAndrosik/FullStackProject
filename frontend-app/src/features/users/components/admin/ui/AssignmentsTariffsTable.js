@@ -2,7 +2,12 @@ import React from "react";
 import { Button, Typography, Tooltip, Box } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 
-const TariffsTable = ({ tariffs, services, onEdit, onDelete }) => {
+const AssignmentsTariffsTable = ({
+    tariffs,
+    assignments,
+    onEdit,
+    onDelete,
+}) => {
     const columnsTariffs = [
         {
             field: "id",
@@ -23,6 +28,25 @@ const TariffsTable = ({ tariffs, services, onEdit, onDelete }) => {
             minWidth: 200,
         },
         {
+            field: "target_info",
+            headerName: "Применить к",
+            flex: 1,
+            minWidth: 200,
+            renderCell: (params) => {
+                const assignment = assignments.find(
+                    (a) => a.id === params.row.assignment_id
+                );
+
+                if (!assignment) return "Не указано";
+
+                if (assignment.scope === "apartment") {
+                    return `Квартира ${assignment.apartment_id}` || "Квартира не найдена";
+                } else {
+                    return `Подъезд ${assignment.entrance}`;
+                }
+            },
+        },
+        {
             field: "formatted_rate",
             headerName: "Тариф",
             width: 150,
@@ -40,7 +64,7 @@ const TariffsTable = ({ tariffs, services, onEdit, onDelete }) => {
         {
             field: "is_current",
             headerName: "Статус",
-            width: 120,
+            width: 150,
             sortable: true,
             renderCell: (params) => {
                 const today = new Date();
@@ -49,30 +73,31 @@ const TariffsTable = ({ tariffs, services, onEdit, onDelete }) => {
                     ? new Date(params.row.end_date)
                     : null;
 
-                // Определяем статус тарифа
+                // Определяем статус тарифа по датам
                 let status;
                 if (today < startDate) {
-                    status = "future"; // Тариф еще не вступил в силу
+                    status = "future";
                 } else if (endDate && today > endDate) {
-                    status = "expired"; // Тариф устарел
+                    status = "expired";
                 } else {
-                    status = "current"; // Активный тариф
+                    status = "current";
                 }
 
-                // Проверяем, активна ли услуга
-                const isServiceActive = services.some(
-                    (service) =>
-                        service.id === params.row.service_id &&
-                        service.is_active
+                // Находим связанную привязку услуги
+                const assignment = assignments.find(
+                    (a) => a.id === params.row.assignment_id
                 );
+                const isAssignmentActive = assignment
+                    ? assignment.is_active
+                    : false;
 
-                // Определяем цвет в зависимости от статуса тарифа и активности услуги
+                // Определяем цвет и текст статуса
                 let color;
                 let statusText;
                 let tooltipText;
 
-                if (!isServiceActive) {
-                    color = "grey.500"; // Серый, если услуга неактивна
+                if (!isAssignmentActive) {
+                    color = "grey.500";
                     statusText = "Отключен";
                     tooltipText = "Услуга отключена";
                 } else {
@@ -183,4 +208,4 @@ const TariffsTable = ({ tariffs, services, onEdit, onDelete }) => {
     );
 };
 
-export default TariffsTable;
+export default AssignmentsTariffsTable;

@@ -67,12 +67,6 @@ class TariffController extends Controller
         Log::debug('TariffController destroy', ['Tariff' => $tariff]);
 
         // Проверяем, можно ли удалить тариф:
-        // 1. Если услуга не существует - можно удалить
-        // 2. Если тариф устарел (end_date < сегодня) - можно удалить
-        // 3. Если тариф не текущий (start_date > сегодня) - можно удалить
-
-
-        // Проверяем, можно ли удалить тариф:
         $serviceExists = Service::where('id', $tariff->service_id)->exists();
 
         // Проверяем активен ли тариф
@@ -88,6 +82,6 @@ class TariffController extends Controller
 
         $tariff->delete();
 
-        return response()->noContent(201);
+        return response()->noContent(204);
     }
 }

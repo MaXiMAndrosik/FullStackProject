@@ -12,9 +12,9 @@ import {
     Checkbox,
     ListItemText,
     Box,
+    Typography,
 } from "@mui/material";
 import StyledTextArea from "../../../../../shared/ui/StyledTextArea";
-import { format } from "date-fns";
 
 const AssignmentDialog = ({
     open,
@@ -49,6 +49,7 @@ const AssignmentDialog = ({
             </DialogTitle>
             <DialogContent>
                 <form onSubmit={onSubmit} id="assignment-form">
+                    {/* Название услуги */}
                     <StyledTextArea
                         name="name"
                         label="Название"
@@ -57,6 +58,7 @@ const AssignmentDialog = ({
                         margin="normal"
                         required
                     />
+                    {/* Тип услуги */}
                     <StyledTextArea
                         name="type"
                         label="Тип услуги"
@@ -72,32 +74,36 @@ const AssignmentDialog = ({
                         <MenuItem value="other">Прочее</MenuItem>
                     </StyledTextArea>
 
-                    <FormControl fullWidth margin="normal" required>
-                        <InputLabel>Тип привязки</InputLabel>
-                        <Select
-                            name="scope"
-                            defaultValue={
-                                currentAssignment?.scope || "apartment"
-                            }
-                            label="Тип привязки"
-                            required
-                            onChange={(e) => {
-                                setAssignmentScope(e.target.value);
-                                if (e.target.value === "entrance") {
-                                    setSelectedEntrances([]);
-                                } else {
-                                    setSelectedApartments([]);
-                                }
-                            }}
-                        >
-                            <MenuItem value="apartment">
-                                К отдельным квартирам
-                            </MenuItem>
-                            <MenuItem value="entrance">К подъездам</MenuItem>
-                        </Select>
-                    </FormControl>
+                    {/* Тип привязки - только для создания */}
+                    {!currentAssignment && (
+                        <FormControl fullWidth margin="normal" required>
+                            <InputLabel>Тип привязки</InputLabel>
+                            <Select
+                                name="scope"
+                                defaultValue="apartment"
+                                label="Тип привязки"
+                                required
+                                onChange={(e) => {
+                                    setAssignmentScope(e.target.value);
+                                    if (e.target.value === "entrance") {
+                                        setSelectedApartments([]);
+                                    } else {
+                                        setSelectedEntrances([]);
+                                    }
+                                }}
+                            >
+                                <MenuItem value="apartment">
+                                    К отдельным квартирам
+                                </MenuItem>
+                                <MenuItem value="entrance">
+                                    К подъездам
+                                </MenuItem>
+                            </Select>
+                        </FormControl>
+                    )}
 
-                    {assignmentScope === "entrance" && (
+                    {/* Выбор объектов - только для создания */}
+                    {!currentAssignment && assignmentScope === "entrance" && (
                         <FormControl fullWidth margin="normal" required>
                             <InputLabel>Подъезды</InputLabel>
                             <Select
@@ -123,7 +129,7 @@ const AssignmentDialog = ({
                         </FormControl>
                     )}
 
-                    {assignmentScope === "apartment" && (
+                    {!currentAssignment && assignmentScope === "apartment" && (
                         <FormControl fullWidth margin="normal" required>
                             <InputLabel>Квартиры</InputLabel>
                             <Select
@@ -158,6 +164,41 @@ const AssignmentDialog = ({
                                 ))}
                             </Select>
                         </FormControl>
+                    )}
+
+                    {/* Показываем текущую привязку при редактировании */}
+                    {currentAssignment && (
+                        <Box
+                            sx={{
+                                mt: 2,
+                                p: 2,
+                                border: "1px solid #ccc",
+                                borderRadius: 1,
+                            }}
+                        >
+                            <Typography variant="subtitle1">
+                                Текущая привязка:
+                            </Typography>
+                            {currentAssignment.scope === "entrance" ? (
+                                <Typography>
+                                    Подъезд {currentAssignment.entrance}
+                                </Typography>
+                            ) : (
+                                <Typography>
+                                    Квартира{" "}
+                                    {
+                                        apartments.find(
+                                            (a) =>
+                                                a.id ===
+                                                currentAssignment.apartment_id
+                                        )?.number
+                                    }
+                                </Typography>
+                            )}
+                            <Typography variant="body2" color="textSecondary">
+                                Привязка не может быть изменена после создания
+                            </Typography>
+                        </Box>
                     )}
 
                     <StyledTextArea

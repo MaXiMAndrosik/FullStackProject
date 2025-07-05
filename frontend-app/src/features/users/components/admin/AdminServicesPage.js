@@ -1,8 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {
-    Container,
-    Box,
-} from "@mui/material";
+import { Container, Box } from "@mui/material";
 import apiClient from "../../../../app/api/client";
 import {
     showSuccess,
@@ -23,10 +20,12 @@ const AdminServicesPage = () => {
     const [openTariffs, setTariffsOpen] = useState(false);
     const [currentTariff, setCurrentTariff] = useState(null);
     const [currentService, setCurrentService] = useState(null);
+    const [apartments, setApartments] = useState([]);
 
     // Загрузка услуг и тарифов
     useEffect(() => {
         fetchServices();
+        fetchApartments();
     }, []);
 
     // Загрузка сервисов с тарифами
@@ -37,6 +36,17 @@ const AdminServicesPage = () => {
             .catch((error) => {
                 showError("Ошибка загрузки услуг");
                 setServices([]);
+            });
+    };
+
+    // Загрузка квартир для расчета
+    const fetchApartments = () => {
+        apiClient
+            .get("/admin/apartments")
+            .then((res) => setApartments(res.data))
+            .catch((error) => {
+                showError("Ошибка загрузки квартир");
+                setApartments([]);
             });
     };
 
@@ -258,7 +268,6 @@ const AdminServicesPage = () => {
                     onEdit={handleOpenTariff}
                     onDelete={handleDeleteTariff}
                 />
-
             </Container>
 
             <ServiceDialog
@@ -276,6 +285,7 @@ const AdminServicesPage = () => {
                 currentTariff={currentTariff}
                 onSubmit={handleSubmitTariff}
                 services={services}
+                apartments={apartments}
             />
 
         </Box>

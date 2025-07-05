@@ -4,6 +4,7 @@ import { DataGrid } from "@mui/x-data-grid";
 
 const AssignmentsServicesTable = ({
     assignments,
+    apartments,
     onAdd,
     onEdit,
     onDelete,
@@ -77,7 +78,12 @@ const AssignmentsServicesTable = ({
             minWidth: 150,
             renderCell: (params) => {
                 if (params.row.scope === "apartment") {
-                    return params.row.apartment_info || "Квартира не найдена";
+                    const apartment = apartments.find(
+                        (a) => a.id === params.row.apartment_id
+                    );
+                    return apartment
+                        ? `Квартира ${apartment.number}`
+                        : "Квартира не найдена";
                 } else {
                     return `Подъезд ${params.row.entrance}`;
                 }
@@ -163,6 +169,7 @@ const AssignmentsServicesTable = ({
                     подъездов или квартир
                 </Typography>
             </Typography>
+
             <DataGrid
                 rows={assignments}
                 columns={columnsAssignmentsServices}
@@ -173,6 +180,7 @@ const AssignmentsServicesTable = ({
                 disableColumnResize
                 density="compact"
             />
+
             <Button variant="contained" onClick={onAdd} sx={{ my: 2 }}>
                 Добавить услугу
             </Button>

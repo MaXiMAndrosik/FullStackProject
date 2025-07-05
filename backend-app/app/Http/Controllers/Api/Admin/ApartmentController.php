@@ -65,4 +65,20 @@ class ApartmentController extends Controller
         $apartment->delete();
         return response()->noContent();
     }
+
+    public function getEntranceAreas()
+    {
+        $entrances = Apartment::select('entrance')
+        ->distinct()
+            ->orderBy('entrance')
+            ->pluck('entrance');
+
+        $areas = [];
+        foreach ($entrances as $entrance) {
+            $area = Apartment::where('entrance', $entrance)->sum('area');
+            $areas[$entrance] = round($area, 2);
+        }
+
+        return response()->json($areas);
+    }
 }

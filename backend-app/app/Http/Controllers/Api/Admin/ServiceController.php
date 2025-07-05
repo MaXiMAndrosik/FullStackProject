@@ -132,7 +132,7 @@ class ServiceController extends Controller
     public function toggleActive(Service $service)
     {
         $service->update(['is_active' => !$service->is_active]);
-        return $service;
+        return response()->noContent(201);
     }
 
     protected function getDefaultUnit($calculationType): string
