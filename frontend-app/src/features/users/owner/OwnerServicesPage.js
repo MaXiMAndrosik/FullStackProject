@@ -15,9 +15,9 @@ import {
     Chip,
     Alert,
 } from "@mui/material";
-import apiClient from "../../../../app/api/client";
+import apiClient from "../../../app/api/client";
 import { format } from "date-fns";
-import { showError } from "../../../../shared/services/notificationService";
+import { showError } from "../../../shared/services/notificationService";
 
 const OwnerServicesPage = () => {
     const [services, setServices] = useState([]);

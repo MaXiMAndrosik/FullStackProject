@@ -20,8 +20,8 @@ class ApartmentsSeeder extends Seeder
         $now = now();
         $apartments = [];
 
-        // Создаем 20 квартир (по числу владельцев в OwnersSeeder)
-        for ($i = 1; $i <= 20; $i++) {
+        // Создаем 60 квартир
+        for ($i = 1; $i <= 60; $i++) {
             $apartments[] = [
                 'number' => $i,
                 'area' => $faker->numberBetween(50, 100),
@@ -35,6 +35,6 @@ class ApartmentsSeeder extends Seeder
 
         Apartment::insert($apartments);
 
-        $this->command->info("Создано 20 записей квартир");
+        $this->command->info("Создано 60 записей квартир");
     }
 }

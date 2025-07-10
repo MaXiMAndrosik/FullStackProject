@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { Container, Box } from "@mui/material";
-import apiClient from "../../../../app/api/client";
+import apiClient from "../../../app/api/client";
 import {
     showSuccess,
     showError,
-} from "../../../../shared/services/notificationService";
+} from "../../../shared/services/notificationService";
 import { format } from "date-fns";
 
 // Импортируем UI-компоненты диалогов
-import AssignmentDialog from "./ui/AssignmentServicesDialog";
-import AssignmentsServicesTable from "./ui/AssignmentsServicesTable";
-import AssignmentsTariffsTable from "./ui/AssignmentsTariffsTable";
-import AssignmentTariffDialog from "./ui/AssignmentTariffDialog";
+import AssignmentDialog from "./components/AssignmentServicesDialog";
+import AssignmentsServicesTable from "./components/AssignmentsServicesTable";
+import AssignmentsTariffsTable from "./components/AssignmentsTariffsTable";
+import AssignmentTariffDialog from "./components/AssignmentTariffDialog";
 
 const AdminServicesAssignmentsPage = () => {
     const [assignmentsServices, setAssignmentsServices] = useState([]);

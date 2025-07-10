@@ -12,7 +12,7 @@ import {
     CircularProgress,
     Alert,
 } from "@mui/material";
-import { showError } from "../../../../../shared/services/notificationService";
+import { showError } from "../../../../shared/services/notificationService";
 
 const TariffCalculatorDialog = ({
     open,

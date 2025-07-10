@@ -11,7 +11,7 @@ import {
     Select,
     MenuItem,
 } from "@mui/material";
-import StyledTextArea from "../../../../../shared/ui/StyledTextArea";
+import StyledTextArea from "../../../../shared/ui/StyledTextArea";
 
 const ServiceDialog = ({
     open,

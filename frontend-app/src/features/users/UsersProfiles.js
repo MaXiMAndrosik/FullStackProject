@@ -13,12 +13,12 @@ import {
     Alert,
 } from "@mui/material";
 import * as Yup from "yup";
-import UserProfileForm from "./components/user/UserProfileForm";
+import UserProfileForm from "./user/UserProfileForm";
 import {
     showSuccess,
     showError,
 } from "../../shared/services/notificationService";
-import OwnerProfileForm from "./components/owner/OwnerProfileForm";
+import OwnerProfileForm from "./owner/OwnerProfileForm";
 
 // Схема валидации данных для верификации
 const validationSchema = Yup.object({

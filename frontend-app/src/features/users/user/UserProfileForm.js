@@ -9,7 +9,7 @@ import {
     CircularProgress,
     Stack,
 } from "@mui/material";
-import StyledTextArea from "../../../../shared/ui/StyledTextArea";
+import StyledTextArea from "../../../shared/ui/StyledTextArea";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 
 const UserProfileForm = ({

@@ -33,11 +33,6 @@ return new class extends Migration
             ->default('pending')
             ->comment('Статус запроса');
 
-            // Системные поля
-            $table->text('verification_notes')->nullable()
-                ->comment('Заметки при верификации');
-            $table->timestamp('processed_at')->nullable();
-
             $table->timestamps();
 
             // Индексы

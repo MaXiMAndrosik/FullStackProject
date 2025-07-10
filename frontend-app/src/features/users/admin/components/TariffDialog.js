@@ -8,42 +8,54 @@ import {
     Box,
     Typography,
 } from "@mui/material";
-import StyledTextArea from "../../../../../shared/ui/StyledTextArea";
+import StyledTextArea from "../../../../shared/ui/StyledTextArea";
 import { format } from "date-fns";
-import AssignmentTariffCalculatorDialog from "./AssignmentTariffCalculatorDialog";
+import TariffCalculatorDialog from "./TariffCalculatorDialog";
 
-const AssignmentTariffDialog = ({
+const TariffDialog = ({
     open,
     onClose,
     currentTariff,
     onSubmit,
     services,
     apartments,
-    entrances,
 }) => {
-    const [openCalculator, setOpenCalculator] = useState(false);
     const [rateValue, setRateValue] = useState(currentTariff?.rate || "");
-    
-    // Находим связанную услугу
-    const serviceAssignment = currentTariff
-        ? services.find((s) => s.id === currentTariff.assignment_id)
-        : null;
+    const [openCalculator, setOpenCalculator] = useState(false);
+
+    // Находим объект услуги по ID
+    const service =
+        services.find((s) => s.id === currentTariff?.service_id) || null;
 
     // Определяем, можно ли рассчитать тариф
-    const canCalculate = serviceAssignment?.calculation_type !== "fixed";
+    const canCalculate = service?.calculation_type !== "fixed";
+
+    // Обновляем состояния при изменении currentTariff
+    useEffect(() => {
+        setRateValue(currentTariff?.rate || "");
+    }, [currentTariff]);
+
+    // // Обработчик отправки формы
+    // const handleSubmit = (e) => {
+    //     e.preventDefault();
+    //     const formData = new FormData(e.target);
+    //     const data = Object.fromEntries(formData.entries());
+
+    //     // Используем актуальные значения из состояния
+    //     data.rate = rateValue;
+    //     // data.service_id = selectedService;
+
+    //     // Преобразование пустых строк в null
+    //     if (data.end_date === "") data.end_date = null;
+
+    //     onSubmit(data);
+    // };
 
     // Обработчик применения рассчитанного тарифа
     const handleApplyCalculatedTariff = (rate) => {
         setRateValue(rate);
         setOpenCalculator(false);
     };
-
-    // Сбрасываем состояние при открытии нового диалога
-    useEffect(() => {
-        if (open) {
-            setRateValue(currentTariff?.rate || "");
-        }
-    }, [open, currentTariff]);
 
     return (
         <>
@@ -53,15 +65,7 @@ const AssignmentTariffDialog = ({
                     <form onSubmit={onSubmit} id="tariff-form">
                         <Box sx={{ mt: 1, mb: 1 }}>
                             <Typography variant="subtitle1" gutterBottom>
-                                <strong>Услуга:</strong>{" "}
-                                {serviceAssignment?.name}
-                            </Typography>
-
-                            <Typography variant="subtitle1" gutterBottom>
-                                {serviceAssignment?.scope === "apartment"
-                                    ? services.apartment_info ||
-                                      `Квартира ${serviceAssignment?.apartment_id}`
-                                    : `Подъезд ${serviceAssignment?.entrance}`}
+                                <strong>Услуга:</strong> {service?.name}
                             </Typography>
                         </Box>
 
@@ -76,11 +80,12 @@ const AssignmentTariffDialog = ({
                             required
                             inputProps={{ step: "0.0001", min: "0" }}
                         />
+
                         <StyledTextArea
                             name="start_date"
                             label="Дата начала"
                             type="date"
-                            defaultValue={
+                            value={
                                 currentTariff?.start_date
                                     ? format(
                                           new Date(currentTariff.start_date),
@@ -93,11 +98,12 @@ const AssignmentTariffDialog = ({
                             required
                             InputLabelProps={{ shrink: true }}
                         />
+
                         <StyledTextArea
                             name="end_date"
                             label="Дата окончания (необязательно)"
                             type="date"
-                            defaultValue={
+                            value={
                                 currentTariff?.end_date
                                     ? format(
                                           new Date(currentTariff.end_date),
@@ -139,13 +145,12 @@ const AssignmentTariffDialog = ({
             </Dialog>
 
             {/* Диалог расчета тарифа */}
-            {serviceAssignment && (
-                <AssignmentTariffCalculatorDialog
+            {canCalculate && (
+                <TariffCalculatorDialog
                     open={openCalculator}
                     onClose={() => setOpenCalculator(false)}
-                    serviceAssignment={serviceAssignment}
+                    service={service}
                     apartments={apartments}
-                    entrances={entrances}
                     onSubmit={handleApplyCalculatedTariff}
                 />
             )}
@@ -153,4 +158,4 @@ const AssignmentTariffDialog = ({
     );
 };
 
-export default AssignmentTariffDialog;
+export default TariffDialog;

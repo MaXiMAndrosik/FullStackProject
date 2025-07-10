@@ -14,7 +14,7 @@ import {
     Box,
     Typography,
 } from "@mui/material";
-import StyledTextArea from "../../../../../shared/ui/StyledTextArea";
+import StyledTextArea from "../../../../shared/ui/StyledTextArea";
 
 const AssignmentDialog = ({
     open,

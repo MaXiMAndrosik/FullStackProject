@@ -29,11 +29,6 @@ class VerificationOwners extends Model
         return $this->belongsTo(User::class);
     }
 
-    public function processor()
-    {
-        return $this->belongsTo(User::class, 'processed_by');
-    }
-
     public function getFullNameAttribute()
     {
         return trim("{$this->last_name} {$this->first_name} {$this->patronymic}");

@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { Container, Box } from "@mui/material";
-import apiClient from "../../../../app/api/client";
+import apiClient from "../../../app/api/client";
 import {
     showSuccess,
     showError,
-} from "../../../../shared/services/notificationService";
+} from "../../../shared/services/notificationService";
 import { format } from "date-fns";
 
 // Импортируем UI-компоненты диалогов
-import ServiceDialog from "./ui/ServiceDialog";
-import TariffDialog from "./ui/TariffDialog";
-import ServicesTable from "./ui/ServicesTable";
-import TariffsTable from "./ui/TariffsTable";
+import ServiceDialog from "./components/ServiceDialog";
+import TariffDialog from "./components/TariffDialog";
+import ServicesTable from "./components/ServicesTable";
+import TariffsTable from "./components/TariffsTable";
 
 const AdminServicesPage = () => {
     const [services, setServices] = useState([]);

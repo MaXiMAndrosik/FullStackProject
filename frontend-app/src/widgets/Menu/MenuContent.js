@@ -37,6 +37,10 @@ import {
     Tune as TuneIcon,
     Badge as BadgeIcon,
     AttachMoney as AttachMoneyIcon,
+    Dashboard as DashboardIcon,
+    People as PeopleIcon,
+    Home as HomeIcon,
+    VerifiedUser as VerifiedUserIcon,
 } from "@mui/icons-material";
 
 export default function MenuContent() {
@@ -308,23 +312,73 @@ export default function MenuContent() {
                 )}
                 {/* Вложенные пункты */}
                 <Collapse in={openUsersServices} timeout="auto" unmountOnExit>
-                    {/* Настройки  */}
+                    {/* Главная панель */}
                     <ListItem
                         disablePadding
-                        sx={{
-                            display: "block",
-                            paddingLeft: 2,
-                        }}
+                        sx={{ display: "block", paddingLeft: 2 }}
                     >
                         <ListItemButton
                             component={Link}
-                            to="/admin/services"
-                            selected={location.pathname === "/admin/services"}
+                            to="/admin"
+                            selected={location.pathname === "/admin"}
                         >
                             <ListItemIcon>
-                                <SettingsIcon />
+                                <DashboardIcon />
                             </ListItemIcon>
-                            <ListItemText secondary="Настройки ЖКУ" />
+                            <ListItemText primary="Главная панель" />
+                        </ListItemButton>
+                    </ListItem>
+
+                    {/* Пользователи */}
+                    <ListItem
+                        disablePadding
+                        sx={{ display: "block", paddingLeft: 2 }}
+                    >
+                        <ListItemButton
+                            component={Link}
+                            to="/admin/users"
+                            selected={location.pathname === "/admin/users"}
+                        >
+                            <ListItemIcon>
+                                <PeopleIcon />
+                            </ListItemIcon>
+                            <ListItemText primary="Пользователи" />
+                        </ListItemButton>
+                    </ListItem>
+
+                    {/* Собственники */}
+                    <ListItem
+                        disablePadding
+                        sx={{ display: "block", paddingLeft: 2 }}
+                    >
+                        <ListItemButton
+                            component={Link}
+                            to="/admin/owners"
+                            selected={location.pathname === "/admin/owners"}
+                        >
+                            <ListItemIcon>
+                                <HomeIcon />
+                            </ListItemIcon>
+                            <ListItemText primary="Собственники" />
+                        </ListItemButton>
+                    </ListItem>
+
+                    {/* Верификация */}
+                    <ListItem
+                        disablePadding
+                        sx={{ display: "block", paddingLeft: 2 }}
+                    >
+                        <ListItemButton
+                            component={Link}
+                            to="/admin/verification"
+                            selected={
+                                location.pathname === "/admin/verification"
+                            }
+                        >
+                            <ListItemIcon>
+                                <VerifiedUserIcon />
+                            </ListItemIcon>
+                            <ListItemText primary="Верификация" />
                         </ListItemButton>
                     </ListItem>
                 </Collapse>

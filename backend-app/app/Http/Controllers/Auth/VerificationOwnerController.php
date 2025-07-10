@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\VerificationRequestedOwnerMail;
 use App\Mail\VerificationResult;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 
 class VerificationOwnerController extends Controller
@@ -46,7 +47,7 @@ class VerificationOwnerController extends Controller
     {
         $user = $request->user();
 
-        Log::debug('VerificationOwnerController::store', ['Request' => $request]);
+        Log::debug('VerificationOwnerController::store', ['Request' => $request->all()]);
 
         $data = $request->validate([
             'last_name' => 'required|string|max:100',
@@ -64,8 +65,6 @@ class VerificationOwnerController extends Controller
             ->where('patronymic', $data['patronymic'])
             ->where('ownership_end_date', null)
             ->exists();
-
-        Log::info('VerificationOwnerController::$ownerExists', ['ownerExists?' => $data]);
 
         if (!$ownerExists) {
             return response()->json([
@@ -96,36 +95,48 @@ class VerificationOwnerController extends Controller
     }
 
     // Подтверждение верификации администратором
-    public function approve(Request $request, $id)
+    public function approve($id)
     {
+
         $verificationRequest = VerificationOwners::findOrFail($id);
+
         $user = $verificationRequest->user;
 
         // Поиск соответствующего собственника
-        $owner = Owner::where('apartment_number', $verificationRequest->apartment_number)
-            ->where('last_name', $verificationRequest->last_name)
+        $owner = Owner::where('last_name', $verificationRequest->last_name)
             ->where('first_name', $verificationRequest->first_name)
-            ->where('birth_date', $verificationRequest->birth_date)
             ->firstOrFail();
 
         // Привязка пользователя к собственнику
-        $owner->update(['user_id' => $user->id]);
-
-        // Обновление статуса пользователя
-        $user->update(['status' => 'owner']);
-
-        // Обновление запроса
-        $verificationRequest->update([
-            'status' => 'approved',
-            // 'processed_by' => auth()->id(),
-            'processed_at' => now()
+        $owner->update([
+            'user_id' => $user->id,
+            'birth_date' => Carbon::parse($verificationRequest->birth_date)->format('Y-m-d'),
+            'phone' => $verificationRequest->phone ? (string)$verificationRequest->phone : null,
+            'is_verified' => true,
+            'verified_at' => now(),
         ]);
 
-        // Отправка уведомления пользователю
-        // Mail::to($user->email)
-        //     ->send(new VerificationResult($verificationRequest, true));
+        // // Обновление статуса пользователя
+        $user->update([
+            'role' => 'owner',
+            'verification_status' => 'verified',
+        ]);
 
-        // Удаление запроса
+        // // Отправка уведомления пользователю
+        // Mail::to($user->email)->send(
+        //     new VerificationResult($verificationRequest, 'approved')
+        // );
+
+        try {
+            Mail::to('zenitchik-4@yandex.ru')->send(new VerificationResult($verificationRequest, 'approved'));
+        } catch (\Exception $e) {
+            Log::error('Email sending failed', [
+                'error' => $e->getMessage(),
+                'email' => 'zenitchik-4@yandex.ru'
+            ]);
+        }
+
+        // // Удаление запроса
         $verificationRequest->delete();
 
         return response()->json([
@@ -134,14 +145,74 @@ class VerificationOwnerController extends Controller
         ]);
     }
 
+    // Отклонение верификации администратором
+    public function reject($id, Request $request)
+    {
+        $verificationRequest = VerificationOwners::findOrFail($id);
+
+        $verificationRequest->update([
+            'status' => 'rejected',
+        ]);
+
+        // Отправка email
+        $user = User::findOrFail($verificationRequest->user_id);
+        // Mail::to($user->email)->send(
+        //     new VerificationResult($verificationRequest, 'rejected')
+        // );
+
+        // // Обновление статуса пользователя
+        $user->update([
+            'verification_status' => 'unverified',
+        ]);
+
+        try {
+            Mail::to('zenitchik-4@yandex.ru')->send(new VerificationResult($verificationRequest, 'rejected'));
+        } catch (\Exception $e) {
+            Log::error('Email sending failed', [
+                'error' => $e->getMessage(),
+                'email' => 'zenitchik-4@yandex.ru'
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Запрос отклонен'
+        ]);
+    }
+
+    // Удаление отклоненной администратором верификации 
+    public function destroy($id)
+    {
+        $request = VerificationOwners::findOrFail($id);
+
+        // Проверяем, можно ли удалять (только отклоненные или обработанные)
+        if ($request->status === 'pending') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Нельзя удалить необработанную заявку'
+            ], 403);
+        }
+
+        $request->delete();
+
+        Log::info('VerificationOwnerController::destroy', ['Удаление запроса пользователя' => $request]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Заявка удалена'
+        ]);
+    }
+
     // Получение всех запросов на верификацию (для админов)
     public function index()
     {
-        $requests = VerificationOwners::with(['user', 'processor'])
-            ->where('status', 'pending')
+        $requests = VerificationOwners::with(['user'])
             ->orderBy('created_at', 'desc')
-            ->paginate(10);
+            ->get();
 
-        return response()->json($requests);
+        return response()->json([
+            'success' => true,
+            'requests' => $requests
+        ]);
     }
 }

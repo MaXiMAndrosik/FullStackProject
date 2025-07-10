@@ -22,16 +22,17 @@ import ResendVerification from "../../features/auth/components/ResendVerificatio
 import AuthCallback from "../../features/auth/components/AuthCallback";
 
 // Owner
-import OwnerServicesPage from "../../features/users/components/owner/OwnerServicesPage";
+import OwnerServicesPage from "../../features/users/owner/OwnerServicesPage";
 
 // User
 import UserProfile from "../../features/users/UsersProfiles";
 
 
 // Admin
-import AdminServicesPage from "../../features/users/components/admin/AdminServicesPage";
-import AdminServicesAssignmentsPage from "../../features/users/components/admin/AdminServicesAssignmentsPage";
-
+import AdminServicesPage from "../../features/users/admin/AdminServicesPage";
+import AdminVerificationPanel from "../../features/users/admin/AdminVerificationPanel";
+import AdminServicesAssignmentsPage from "../../features/users/admin/AdminServicesAssignmentsPage";
+import AdminOwnersPage from "../../features/users/admin/AdminOwnersPage";
 
 
 import { AdminRoute, AdminOwnerUserRoute, OwnerRoute } from "./RoleRoute";
@@ -66,6 +67,38 @@ export const routes = [
                 element: (
                     <AdminRoute>
                         <AnnouncementForm />
+                    </AdminRoute>
+                ),
+            },
+            {
+                path: "/admin",
+                element: (
+                    <AdminRoute>
+                        <h1>/admin page</h1>
+                    </AdminRoute>
+                ),
+            },
+            {
+                path: "/admin/users",
+                element: (
+                    <AdminRoute>
+                        <h1>/admin/users page</h1>
+                    </AdminRoute>
+                ),
+            },
+            {
+                path: "/admin/owners",
+                element: (
+                    <AdminRoute>
+                        <AdminOwnersPage />
+                    </AdminRoute>
+                ),
+            },
+            {
+                path: "/admin/verification",
+                element: (
+                    <AdminRoute>
+                        <AdminVerificationPanel />
                     </AdminRoute>
                 ),
             },

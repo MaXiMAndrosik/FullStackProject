@@ -70,7 +70,6 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
         // Получение данных о действующих услугах и тарифах для собственника
         Route::get('/owner/services', [ServiceController::class, 'show']);
         Route::get('/owner/service-assignments', [ServiceAssignmentController::class, 'show']);
-
     });
 
     // ---------------------------------------------------------------------------------------------------------------------------
@@ -92,10 +91,18 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
         Route::put('/admin/service-assignments/{service_assignment}/toggle-active', [ServiceAssignmentController::class, 'toggleActive']);
         Route::apiResource('/admin/assignment-tariffs', AssignmentTariffController::class);
 
+        // Создание, удаление и редактирование собственников
+        Route::apiResource('/admin/owners', OwnerController::class)->except(['show']);
 
+        // Верификация пользователей
+        Route::get('/admin/verification-requests', [VerificationOwnerController::class, 'index']);
+        Route::post('/admin/verification/{id}/approve', [VerificationOwnerController::class, 'approve']);
+        Route::post('/admin/verification/{id}/reject', [VerificationOwnerController::class, 'reject']);
+        Route::delete('admin/verification-requests/{id}', [VerificationOwnerController::class, 'destroy']);
 
 
         Route::apiResource('/admin/apartments', ApartmentController::class);
+
     });
 });
 

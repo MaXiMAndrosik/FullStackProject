@@ -10,16 +10,16 @@ class Owner extends Model
 {
     protected $fillable = [
         'user_id',
-        'full_name',
+        'last_name',
+        'first_name',
+        'patronymic',
         'birth_date',
         'phone',
         'telegram',
-        'apartment_number',
-        'ownership_document_path',
+        'apartment_id',
         'ownership_start_date',
         'ownership_end_date',
         'is_verified',
-        'verified_by',
         'verified_at'
     ];
 
