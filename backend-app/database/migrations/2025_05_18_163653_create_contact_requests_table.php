@@ -17,6 +17,9 @@ return new class extends Migration
             $table->string('email');
             $table->string('phone');
             $table->text('message');
+            $table->enum('status', ['new', 'resolved'])->default('new');
+            $table->text('response')->nullable();
+            $table->timestamp('response_at')->nullable();
             $table->timestamps();
         });
     }

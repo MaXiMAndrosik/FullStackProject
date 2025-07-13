@@ -81,6 +81,9 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
         Route::post('/announcements', [AnnouncementController::class, 'store']);
         Route::delete('/announcements/{id}', [AnnouncementController::class, 'destroy']);
 
+        // Обращения пользователей
+        Route::apiResource('/admin/appeals', AppealsController::class)->except(['store']);
+
         // Создание, удаление и редактирование сервисов ЖКУ и тарифов к ним
         Route::apiResource('/admin/services', ServiceController::class)->except(['show']);
         Route::put('/admin/services/{service}/toggle-active', [ServiceController::class, 'toggleActive']);

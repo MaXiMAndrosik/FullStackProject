@@ -43,6 +43,7 @@ import {
     VerifiedUser as VerifiedUserIcon,
     Apartment as ApartmentIcon,
     DomainAdd as DomainAddIcon,
+    ContactMail as ContactMailIcon,
 } from "@mui/icons-material";
 
 export default function MenuContent() {
@@ -285,6 +286,29 @@ export default function MenuContent() {
                                 <PostAddIcon />
                             </ListItemIcon>
                             <ListItemText secondary="Создать объявление" />
+                        </ListItemButton>
+                    </ListItem>
+                )}
+
+                {/* Просмотр обращений */}
+                {userRole === "admin" && (
+                    <ListItem
+                        disablePadding
+                        sx={{
+                            display: "block",
+                            borderTop: "1px solid rgba(0, 0, 0, 0.12)",
+                            paddingTop: 1,
+                        }}
+                    >
+                        <ListItemButton
+                            component={Link}
+                            to="admin/appeals"
+                            selected={location.pathname === "admin/appeals"}
+                        >
+                            <ListItemIcon>
+                                <ContactMailIcon />
+                            </ListItemIcon>
+                            <ListItemText secondary="Обращения пользователей" />
                         </ListItemButton>
                     </ListItem>
                 )}

@@ -13,6 +13,9 @@ class Appeals extends Model
         'name',
         'email',
         'phone',
-        'message'
+        'message',
+        'status',     // 'new', 'resolved'
+        'response',
+        'response_at'
     ];
 }

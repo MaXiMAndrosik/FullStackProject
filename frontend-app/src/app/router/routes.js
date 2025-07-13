@@ -35,6 +35,8 @@ import AdminVerificationPanel from "../../features/users/admin/AdminVerification
 import AdminServicesAssignmentsPage from "../../features/users/admin/AdminServicesAssignmentsPage";
 import AdminOwnersPage from "../../features/users/admin/AdminOwnersPage";
 import AdminUsersPage from "../../features/users/admin/AdminUsersPage";
+import AdminAppealsPage from "../../features/appeal/AdminAppealsPage";
+
 
 
 import { AdminRoute, AdminOwnerUserRoute, OwnerRoute } from "./RoleRoute";
@@ -69,6 +71,14 @@ export const routes = [
                 element: (
                     <AdminRoute>
                         <AnnouncementForm />
+                    </AdminRoute>
+                ),
+            },
+            {
+                path: "/admin/appeals",
+                element: (
+                    <AdminRoute>
+                        <AdminAppealsPage />
                     </AdminRoute>
                 ),
             },
