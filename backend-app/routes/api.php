@@ -50,7 +50,7 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     // Получение данных о себе
     Route::get('/user', [UserController::class, 'current']);
     // Удаление аккаунта
-    Route::delete('/user', [UserController::class, 'destroy']);
+    Route::delete('/user', [UserController::class, 'currentDestroy']);
 
 
     // Роуты для пользователей 'users' для верификации собственника
@@ -99,6 +99,9 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
         Route::post('/admin/verification/{id}/approve', [VerificationOwnerController::class, 'approve']);
         Route::post('/admin/verification/{id}/reject', [VerificationOwnerController::class, 'reject']);
         Route::delete('admin/verification-requests/{id}', [VerificationOwnerController::class, 'destroy']);
+
+        // Редактирование пользователей
+        Route::apiResource('/admin/users', UserController::class)->except(['show']);
 
 
         Route::apiResource('/admin/apartments', ApartmentController::class);

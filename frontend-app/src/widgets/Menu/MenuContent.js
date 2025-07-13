@@ -41,6 +41,8 @@ import {
     People as PeopleIcon,
     Home as HomeIcon,
     VerifiedUser as VerifiedUserIcon,
+    Apartment as ApartmentIcon,
+    DomainAdd as DomainAddIcon,
 } from "@mui/icons-material";
 
 export default function MenuContent() {
@@ -422,7 +424,7 @@ export default function MenuContent() {
                             selected={location.pathname === "/admin/services"}
                         >
                             <ListItemIcon>
-                                <SettingsIcon />
+                                <ApartmentIcon />
                             </ListItemIcon>
                             <ListItemText secondary="Настройки ЖКУ" />
                         </ListItemButton>
@@ -444,7 +446,7 @@ export default function MenuContent() {
                             }
                         >
                             <ListItemIcon>
-                                <SettingsIcon />
+                                <DomainAddIcon />
                             </ListItemIcon>
                             <ListItemText secondary="Индивидуальные настройки услуг" />
                         </ListItemButton>

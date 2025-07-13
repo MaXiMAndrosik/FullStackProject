@@ -14,6 +14,7 @@ import AboutPage from "../../features/about/AboutPage";
 import NotFoundPage from "../../widgets/ErrorPages/NotFoundPage";
 import UnauthorizedPage from "../../widgets/ErrorPages/UnauthorizedPage";
 import ForbiddenPage from "../../widgets/ErrorPages/ForbiddenPage";
+import InDevelopmentPage from "../../widgets/ErrorPages/InDevelopmentPage";
 // Auth
 import SignUp from "../../features/auth/SignUp";
 import SignIn from "../../features/auth/SignIn";
@@ -33,6 +34,7 @@ import AdminServicesPage from "../../features/users/admin/AdminServicesPage";
 import AdminVerificationPanel from "../../features/users/admin/AdminVerificationPanel";
 import AdminServicesAssignmentsPage from "../../features/users/admin/AdminServicesAssignmentsPage";
 import AdminOwnersPage from "../../features/users/admin/AdminOwnersPage";
+import AdminUsersPage from "../../features/users/admin/AdminUsersPage";
 
 
 import { AdminRoute, AdminOwnerUserRoute, OwnerRoute } from "./RoleRoute";
@@ -74,7 +76,7 @@ export const routes = [
                 path: "/admin",
                 element: (
                     <AdminRoute>
-                        <h1>/admin page</h1>
+                        <InDevelopmentPage />
                     </AdminRoute>
                 ),
             },
@@ -82,7 +84,7 @@ export const routes = [
                 path: "/admin/users",
                 element: (
                     <AdminRoute>
-                        <h1>/admin/users page</h1>
+                        <AdminUsersPage />
                     </AdminRoute>
                 ),
             },
@@ -120,15 +122,15 @@ export const routes = [
             },
             {
                 path: "/user/receipts",
-                element: <h1>/user/receipts page</h1>,
+                element: <InDevelopmentPage />,
             },
             {
                 path: "/user/history",
-                element: <h1>/user/history page</h1>,
+                element: <InDevelopmentPage />,
             },
             {
                 path: "/user/meters",
-                element: <h1>/user/meters page</h1>,
+                element: <InDevelopmentPage />,
             },
             {
                 path: "/owner/services",

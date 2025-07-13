@@ -61,6 +61,8 @@ class OwnerController extends Controller
     public function store(Request $request)
     {
 
+        Log::debug('OwnerController store', ['Request' => $request->all()]);
+
         $validated = $request->validate([
             'last_name' => 'required|string|max:255',
             'first_name' => 'required|string|max:255',
@@ -122,8 +124,6 @@ class OwnerController extends Controller
 
             Log::info('OwnerController store', ['Owner create' => $owner]);
         });
-
-        // $owner = Owner::create($validated);
 
         return response()->json([
             'message' => 'Данные владельца успешно сохранены',

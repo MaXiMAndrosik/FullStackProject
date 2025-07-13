@@ -396,13 +396,14 @@ const OwnerDialog = ({ open, onClose, owner, onSubmit }) => {
                             />
                         </Box>
 
+                        <input
+                            type="hidden"
+                            name="is_verified"
+                            value={formData.is_verified ? 1 : 0}
+                        />
+
                         {owner ? (
                             <>
-                                <input
-                                    type="hidden"
-                                    name="is_verified"
-                                    value={formData.is_verified ? 1 : 0}
-                                />
                                 <FormControlLabel
                                     control={
                                         <Checkbox
