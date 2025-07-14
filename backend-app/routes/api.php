@@ -106,7 +106,7 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
         // Редактирование пользователей
         Route::apiResource('/admin/users', UserController::class)->except(['show']);
 
-
+        // Управление квартирами собственников
         Route::apiResource('/admin/apartments', ApartmentController::class);
 
     });

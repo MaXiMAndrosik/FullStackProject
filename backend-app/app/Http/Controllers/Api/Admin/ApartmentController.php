@@ -13,7 +13,21 @@ class ApartmentController extends Controller
      */
     public function index()
     {
-        return Apartment::all();
+        $apartments = Apartment::withCount('owners')->get();
+
+        return response()->json(
+            $apartments->map(function ($apartment) {
+                return [
+                    'id' => $apartment->id,
+                    'number' => $apartment->number,
+                    'area' => $apartment->area,
+                    'floor' => $apartment->floor,
+                    'entrance' => $apartment->entrance,
+                    'rooms' => $apartment->rooms,
+                    'has_owners' => $apartment->owners_count > 0, // Флаг наличия собственников
+                ];
+            })
+        );
     }
 
     /**
@@ -63,13 +77,13 @@ class ApartmentController extends Controller
     public function destroy(Apartment $apartment)
     {
         $apartment->delete();
-        return response()->noContent();
+        return response()->noContent(204);
     }
 
     public function getEntranceAreas()
     {
         $entrances = Apartment::select('entrance')
-        ->distinct()
+            ->distinct()
             ->orderBy('entrance')
             ->pluck('entrance');
 

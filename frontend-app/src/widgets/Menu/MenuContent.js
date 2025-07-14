@@ -44,6 +44,8 @@ import {
     Apartment as ApartmentIcon,
     DomainAdd as DomainAddIcon,
     ContactMail as ContactMailIcon,
+    ListAlt as ListAltIcon,
+    SettingsInputHdmi as MetersIcon,
 } from "@mui/icons-material";
 
 export default function MenuContent() {
@@ -57,6 +59,7 @@ export default function MenuContent() {
     const [openUsersServices, setOpenUsersServices] = useState(false);
     const [openServices, setOpenServices] = useState(false);
     const [openOffice, setOpenOffice] = useState(false);
+    const [openObjects, setOpenObjects] = useState(false);
 
     const handleUsersServicesClick = () => {
         setOpenUsersServices(!openUsersServices);
@@ -91,7 +94,6 @@ export default function MenuContent() {
                         <ListItemText secondary="Главная" />
                     </ListItemButton>
                 </ListItem>
-
                 {/* Обьявления */}
                 <ListItem disablePadding sx={{ display: "block" }}>
                     <ListItemButton
@@ -122,7 +124,6 @@ export default function MenuContent() {
                         )} */}
                     </ListItemButton>
                 </ListItem>
-
                 {/* Личный кабинет */}
                 {userRole === "owner" && (
                     <ListItem disablePadding sx={{ display: "block" }}>
@@ -222,7 +223,6 @@ export default function MenuContent() {
                         </ListItemButton>
                     </ListItem>
                 </Collapse>
-
                 {/* Услуги */}
                 <ListItem disablePadding sx={{ display: "block" }}>
                     <ListItemButton
@@ -236,7 +236,6 @@ export default function MenuContent() {
                         <ListItemText secondary="Услуги" />
                     </ListItemButton>
                 </ListItem>
-
                 {/* Обращения */}
                 <ListItem disablePadding sx={{ display: "block" }}>
                     <ListItemButton
@@ -250,7 +249,6 @@ export default function MenuContent() {
                         <ListItemText secondary="Обращения" />
                     </ListItemButton>
                 </ListItem>
-
                 {/* О нас */}
                 <ListItem disablePadding sx={{ display: "block" }}>
                     <ListItemButton
@@ -264,8 +262,7 @@ export default function MenuContent() {
                         <ListItemText secondary="О нас" />
                     </ListItemButton>
                 </ListItem>
-
-                {/* Создать обьявление */}
+                {/* Новое объявление */}
                 {userRole === "admin" && (
                     <ListItem
                         disablePadding
@@ -285,11 +282,10 @@ export default function MenuContent() {
                             <ListItemIcon>
                                 <PostAddIcon />
                             </ListItemIcon>
-                            <ListItemText secondary="Создать объявление" />
+                            <ListItemText secondary="Новое объявление" />
                         </ListItemButton>
                     </ListItem>
                 )}
-
                 {/* Просмотр обращений */}
                 {userRole === "admin" && (
                     <ListItem
@@ -312,7 +308,6 @@ export default function MenuContent() {
                         </ListItemButton>
                     </ListItem>
                 )}
-
                 {/* Настройки пользователей */}
                 {userRole === "admin" && (
                     <ListItem
@@ -327,7 +322,7 @@ export default function MenuContent() {
                             <ListItemIcon>
                                 <ManageAccountsIcon />
                             </ListItemIcon>
-                            <ListItemText secondary="Настройки пользователей" />
+                            <ListItemText secondary="Пользователи" />
                             {openUsersServices ? (
                                 <ExpandLessIcon />
                             ) : (
@@ -368,7 +363,7 @@ export default function MenuContent() {
                             <ListItemIcon>
                                 <PeopleIcon />
                             </ListItemIcon>
-                            <ListItemText primary="Пользователи" />
+                            <ListItemText primary="Все пользователи" />
                         </ListItemButton>
                     </ListItem>
 
@@ -408,7 +403,6 @@ export default function MenuContent() {
                         </ListItemButton>
                     </ListItem>
                 </Collapse>
-
                 {/* Настройки услуг и тарифов */}
                 {userRole === "admin" && (
                     <ListItem
@@ -421,9 +415,9 @@ export default function MenuContent() {
                     >
                         <ListItemButton onClick={handleServicesClick}>
                             <ListItemIcon>
-                                <TuneIcon />
+                                <AttachMoneyIcon />
                             </ListItemIcon>
-                            <ListItemText secondary="Настройки тарифов и услуг" />
+                            <ListItemText secondary="Тарифы и услуги" />
                             {openServices ? (
                                 <ExpandLessIcon />
                             ) : (
@@ -470,13 +464,77 @@ export default function MenuContent() {
                             }
                         >
                             <ListItemIcon>
-                                <DomainAddIcon />
+                                <TuneIcon />
                             </ListItemIcon>
                             <ListItemText secondary="Индивидуальные настройки услуг" />
                         </ListItemButton>
                     </ListItem>
                 </Collapse>
-
+                {/* Управление объектами */}
+                {userRole === "admin" && (
+                    <ListItem
+                        disablePadding
+                        sx={{
+                            display: "block",
+                            borderTop: "1px solid rgba(0, 0, 0, 0.12)",
+                            paddingTop: 1,
+                        }}
+                    >
+                        <ListItemButton
+                            onClick={() => setOpenObjects(!openObjects)}
+                        >
+                            <ListItemIcon>
+                                <ApartmentIcon />
+                            </ListItemIcon>
+                            <ListItemText secondary="Объекты" />
+                            {openObjects ? (
+                                <ExpandLessIcon />
+                            ) : (
+                                <ExpandMoreIcon />
+                            )}
+                        </ListItemButton>
+                    </ListItem>
+                )}
+                <Collapse in={openObjects} timeout="auto" unmountOnExit>
+                    <ListItem disablePadding sx={{ pl: 3 }}>
+                        <ListItemButton
+                            component={Link}
+                            to="/admin/apartments"
+                            selected={location.pathname === "/admin/apartments"}
+                        >
+                            <ListItemIcon>
+                                <ApartmentIcon />
+                            </ListItemIcon>
+                            <ListItemText secondary="Квартиры" />
+                        </ListItemButton>
+                    </ListItem>
+                    <ListItem disablePadding sx={{ pl: 3 }}>
+                        <ListItemButton
+                            component={Link}
+                            to="/admin/meters"
+                            selected={location.pathname === "/admin/meters"}
+                        >
+                            <ListItemIcon>
+                                <MetersIcon />
+                            </ListItemIcon>
+                            <ListItemText secondary="Счетчики" />
+                        </ListItemButton>
+                    </ListItem>
+                    <ListItem disablePadding sx={{ pl: 3 }}>
+                        <ListItemButton
+                            component={Link}
+                            to="/admin/meter-readings"
+                            selected={
+                                location.pathname === "/admin/meter-readings"
+                            }
+                        >
+                            <ListItemIcon>
+                                <ListAltIcon />
+                            </ListItemIcon>
+                            <ListItemText secondary="Показания" />
+                        </ListItemButton>
+                    </ListItem>
+                </Collapse>
                 {/* Настройки профиля */}
                 {userRole === "user" && (
                     <ListItem
@@ -499,7 +557,6 @@ export default function MenuContent() {
                         </ListItemButton>
                     </ListItem>
                 )}
-
                 {/* Кнопка выхода внизу */}
                 {["admin", "owner", "user"].includes(userRole) && (
                     <ListItem
@@ -529,13 +586,17 @@ export default function MenuContent() {
                         </ListItemButton>
                     </ListItem>
                 )}
-
                 <ListItemIcon>
                     <BadgeIcon />
+                </ListItemIcon>{" "}
+                <ListItemIcon>
+                    <TuneIcon />
                 </ListItemIcon>
-
                 <ListItemIcon>
                     <PersonSearchIcon />
+                </ListItemIcon>{" "}
+                <ListItemIcon>
+                    <InfoIcon />
                 </ListItemIcon>
             </List>
         </Stack>

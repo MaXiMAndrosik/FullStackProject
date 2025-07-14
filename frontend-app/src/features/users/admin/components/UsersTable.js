@@ -1,5 +1,12 @@
 import React from "react";
-import { Button, Typography, Chip, CircularProgress, Box } from "@mui/material";
+import {
+    Button,
+    Typography,
+    Chip,
+    CircularProgress,
+    Box,
+    Tooltip,
+} from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 
 const UsersTable = ({ users, loading, onEdit, onDelete, onCreate }) => {
@@ -49,39 +56,35 @@ const UsersTable = ({ users, loading, onEdit, onDelete, onCreate }) => {
             field: "actions",
             headerName: "Действия",
             width: 250,
-            renderCell: (params) => {
-                if (params.row.role !== "owner") {
-                    return (
-                        <div>
+            renderCell: (params) => (
+                <div>
+                    <Tooltip
+                        title={
+                            params.row.role
+                                ? "Нельзя изменить активную запись собственника"
+                                : ""
+                        }
+                        placement="top"
+                    >
+                        <span>
                             <Button
                                 size="small"
                                 onClick={() => onEdit(params.row)}
+                                disabled={params.row.role === "owner"}
                             >
                                 Изменить роль
                             </Button>
-                            <Button
-                                size="small"
-                                color="error"
-                                onClick={() => onDelete(params.row.id)}
-                            >
-                                Удалить
-                            </Button>
-                        </div>
-                    );
-                } else {
-                    return (
-                        <div>
-                            <Button
-                                size="small"
-                                color="error"
-                                onClick={() => onDelete(params.row.id)}
-                            >
-                                Удалить
-                            </Button>
-                        </div>
-                    );
-                }
-            },
+                        </span>
+                    </Tooltip>
+                    <Button
+                        size="small"
+                        color="error"
+                        onClick={() => onDelete(params.row.id)}
+                    >
+                        Удалить
+                    </Button>
+                </div>
+            ),
         },
     ];
 

@@ -36,6 +36,7 @@ import AdminServicesAssignmentsPage from "../../features/users/admin/AdminServic
 import AdminOwnersPage from "../../features/users/admin/AdminOwnersPage";
 import AdminUsersPage from "../../features/users/admin/AdminUsersPage";
 import AdminAppealsPage from "../../features/appeal/AdminAppealsPage";
+import AdminApartmentsPage from "../../features/users/admin/AdminApartmentsPage";
 
 
 
@@ -127,6 +128,30 @@ export const routes = [
                 element: (
                     <AdminRoute>
                         <AdminServicesAssignmentsPage />
+                    </AdminRoute>
+                ),
+            },
+            {
+                path: "/admin/apartments",
+                element: (
+                    <AdminRoute>
+                        <AdminApartmentsPage />
+                    </AdminRoute>
+                ),
+            },
+            {
+                path: "/admin/meters",
+                element: (
+                    <AdminRoute>
+                        <InDevelopmentPage />
+                    </AdminRoute>
+                ),
+            },
+            {
+                path: "/admin/meter-readings",
+                element: (
+                    <AdminRoute>
+                        <InDevelopmentPage />
                     </AdminRoute>
                 ),
             },

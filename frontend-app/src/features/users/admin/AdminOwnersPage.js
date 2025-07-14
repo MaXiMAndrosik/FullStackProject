@@ -522,6 +522,7 @@ const AdminOwnersPage = () => {
                     importResults={importResults}
                     onSaveErrorReport={saveErrorReport}
                     handleTemplate={handleDownloadTemplate}
+                    title ="Импорт собственников из Excel"
                 />
             </Container>
         </Box>

@@ -29,13 +29,14 @@ const ImportDialog = ({
     importResults,
     onSaveErrorReport,
     handleTemplate,
+    title,
 }) => {
     return (
         <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
             {/* Шаг 1: Выбор файла */}
             {importStep === "select" && (
                 <>
-                    <DialogTitle>Импорт собственников из Excel</DialogTitle>
+                    <DialogTitle>{title}</DialogTitle>
                     <DialogContent>
                         <Box
                             sx={{
@@ -110,17 +111,17 @@ const ImportDialog = ({
                         </Box>
                     </DialogContent>
                     <DialogActions>
-                            <Button onClick={onClose} disabled={importing}>
-                                Отмена
-                            </Button>
-                            <Button
-                                onClick={onImport}
-                                variant="contained"
-                                color="primary"
-                                disabled={!file || importing}
-                            >
-                                Импортировать
-                            </Button>
+                        <Button onClick={onClose} disabled={importing}>
+                            Отмена
+                        </Button>
+                        <Button
+                            onClick={onImport}
+                            variant="contained"
+                            color="primary"
+                            disabled={!file || importing}
+                        >
+                            Импортировать
+                        </Button>
                     </DialogActions>
                 </>
             )}
