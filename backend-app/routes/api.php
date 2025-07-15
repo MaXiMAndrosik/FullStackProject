@@ -17,6 +17,8 @@ use App\Http\Controllers\Api\Admin\ServiceAssignmentController;
 use App\Http\Controllers\Api\Admin\TariffController;
 use App\Http\Controllers\Api\Admin\ApartmentController;
 use App\Http\Controllers\Api\Admin\AssignmentTariffController;
+use App\Http\Controllers\Api\Admin\MeterTypeController;
+use App\Http\Controllers\Api\Admin\MeterController;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Redis;
 
@@ -109,6 +111,15 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
         // Управление квартирами собственников
         Route::apiResource('/admin/apartments', ApartmentController::class);
 
+        // Управление счетчиками квартир
+        Route::apiResource('/admin/meter-types', MeterTypeController::class);
+        Route::post('/admin/meters/bulk-delete', [MeterController::class, 'bulkDelete']);
+        Route::patch('/admin/meters/bulk-toggle', [MeterController::class, 'bulkToggle']);
+        Route::patch('/admin/meters/{meter}/toggle', [MeterController::class, 'toggleStatus']);
+        Route::apiResource('/admin/meters', MeterController::class);
+
+        // Получение счетчиков по квартире
+        Route::get('apartments/{apartment}/meters', [MeterController::class, 'byApartment']);
     });
 });
 

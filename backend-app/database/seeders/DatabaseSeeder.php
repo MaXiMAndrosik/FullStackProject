@@ -20,6 +20,8 @@ class DatabaseSeeder extends Seeder
             ServiceSeeder::class,
             ServiceAssignmentSeeder::class,
             TariffSeeder::class,
+            MeterTypeSeeder::class,
+            MeterSeeder::class,
         ]);
     }
 }

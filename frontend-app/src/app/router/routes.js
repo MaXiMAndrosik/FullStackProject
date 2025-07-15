@@ -37,7 +37,7 @@ import AdminOwnersPage from "../../features/users/admin/AdminOwnersPage";
 import AdminUsersPage from "../../features/users/admin/AdminUsersPage";
 import AdminAppealsPage from "../../features/appeal/AdminAppealsPage";
 import AdminApartmentsPage from "../../features/users/admin/AdminApartmentsPage";
-
+import AdminMetersPage from "../../features/users/admin/AdminMetersPage";
 
 
 import { AdminRoute, AdminOwnerUserRoute, OwnerRoute } from "./RoleRoute";
@@ -143,7 +143,7 @@ export const routes = [
                 path: "/admin/meters",
                 element: (
                     <AdminRoute>
-                        <InDevelopmentPage />
+                        <AdminMetersPage />
                     </AdminRoute>
                 ),
             },

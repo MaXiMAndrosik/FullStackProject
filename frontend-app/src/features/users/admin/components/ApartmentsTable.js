@@ -55,11 +55,11 @@ const ApartmentsTable = ({
         {
             field: "has_owners",
             headerName: "Собственники",
-            width: 120,
+            width: 150,
             renderCell: (params) => (
                 <Chip
-                    label={params.value > 0 ? `Есть` : "Нет"}
-                    color={params.value > 0 ? "primary" : "default"}
+                    label={params.value > 0 ? `Активирован` : "Нет данных"}
+                    color={params.value > 0 ? "success" : "warning"}
                     variant="outlined"
                     size="small"
                 />
@@ -158,7 +158,7 @@ const ApartmentsTable = ({
                         variant="contained"
                         startIcon={<ImportIcon />}
                         onClick={onImport}
-                        sx={{ width: { xs: "100%", sm: "auto" } }} // Полная ширина на мобильных
+                        sx={{ width: { xs: "100%", sm: "auto" } }}
                     >
                         Импорт из Excel
                     </Button>
@@ -185,7 +185,7 @@ const ApartmentsTable = ({
 
             <DataGrid
                 sx={{
-                    maxWidth: { xs: "100%", sm: "80%", md: 850 },
+                    maxWidth: { xs: "100%", sm: "80%", md: 885 },
                     mx: "auto",
                 }}
                 rows={apartments}
