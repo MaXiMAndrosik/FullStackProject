@@ -586,18 +586,18 @@ export default function MenuContent() {
                         </ListItemButton>
                     </ListItem>
                 )}
-                <ListItemIcon>
+                {/* <ListItemIcon>
                     <BadgeIcon />
-                </ListItemIcon>{" "}
+                </ListItemIcon>
                 <ListItemIcon>
                     <TuneIcon />
                 </ListItemIcon>
                 <ListItemIcon>
                     <PersonSearchIcon />
-                </ListItemIcon>{" "}
+                </ListItemIcon>
                 <ListItemIcon>
                     <InfoIcon />
-                </ListItemIcon>
+                </ListItemIcon> */}
             </List>
         </Stack>
     );
