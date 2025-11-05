@@ -24,10 +24,10 @@ import AuthCallback from "../../features/auth/components/AuthCallback";
 
 // Owner
 import OwnerServicesPage from "../../features/users/owner/OwnerServicesPage";
+import OwnerMeterReadingPage from "../../features/users/owner/OwnerMeterReadingPage";
 
 // User
 import UserProfile from "../../features/users/UsersProfiles";
-
 
 // Admin
 import AdminServicesPage from "../../features/users/admin/AdminServicesPage";
@@ -38,6 +38,7 @@ import AdminUsersPage from "../../features/users/admin/AdminUsersPage";
 import AdminAppealsPage from "../../features/appeal/AdminAppealsPage";
 import AdminApartmentsPage from "../../features/users/admin/AdminApartmentsPage";
 import AdminMetersPage from "../../features/users/admin/AdminMetersPage";
+import AdminMeterReadingsPage from "../../features/users/admin/AdminMeterReadingsPage";
 
 
 import { AdminRoute, AdminOwnerUserRoute, OwnerRoute } from "./RoleRoute";
@@ -151,6 +152,14 @@ export const routes = [
                 path: "/admin/meter-readings",
                 element: (
                     <AdminRoute>
+                        <AdminMeterReadingsPage />
+                    </AdminRoute>
+                ),
+            },
+            {
+                path: "/admin/payment-table",
+                element: (
+                    <AdminRoute>
                         <InDevelopmentPage />
                     </AdminRoute>
                 ),
@@ -172,6 +181,14 @@ export const routes = [
                 element: (
                     <OwnerRoute>
                         <OwnerServicesPage />
+                    </OwnerRoute>
+                ),
+            },
+            {
+                path: "/owner/meters",
+                element: (
+                    <OwnerRoute>
+                        <OwnerMeterReadingPage />
                     </OwnerRoute>
                 ),
             },

@@ -5,25 +5,22 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Meter extends Model
+class MeterReading extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'apartment_id',
-        'type_id',
-        'serial_number',
-        'installation_date',
-        'next_verification_date',
-        'is_active'
+        'meter_id',
+        'period',
+        'value',
+        'is_fixed'
     ];
 
     protected $casts = [
-        'installation_date' => 'date:Y-m-d',
-        'next_verification_date' => 'date:Y-m-d',
-        'is_active' => 'boolean'
+        'period' => 'date',
+        'value' => 'integer',
+        'is_fixed' => 'boolean'
     ];
 
     public function apartment(): BelongsTo
@@ -36,8 +33,8 @@ class Meter extends Model
         return $this->belongsTo(MeterType::class, 'type_id');
     }
 
-    public function readings(): HasMany
+    public function meter(): BelongsTo
     {
-        return $this->hasMany(MeterReading::class);
+        return $this->belongsTo(Meter::class);
     }
 }

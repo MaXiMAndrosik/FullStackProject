@@ -2,9 +2,6 @@ import React, { useState, useEffect } from "react";
 import {
     Select,
     MenuItem,
-    InputLabel,
-    FormControl,
-    TextField,
     Button,
     Dialog,
     DialogTitle,
@@ -27,6 +24,7 @@ import {
     showError,
 } from "../../shared/services/notificationService";
 import StyledTextArea from "../../shared/ui/StyledTextArea";
+import StyledFormControl from "../../shared/ui/StyledFormControl";
 
 const AdminAppealsPage = () => {
     const [appeals, setAppeals] = useState([]);
@@ -152,8 +150,13 @@ const AdminAppealsPage = () => {
                         </Typography>
                     </Typography>
 
-                    <FormControl sx={{ mb: 2, minWidth: 120 }}>
-                        <InputLabel>Статус</InputLabel>
+                    <StyledFormControl sx={{ mb: 2, minWidth: 120 }}>
+                        <Typography
+                            variant="body2"
+                            sx={{ color: "primary.main", mb: 0.5 }}
+                        >
+                            Статус
+                        </Typography>
                         <Select
                             value={statusFilter}
                             onChange={(e) => setStatusFilter(e.target.value)}
@@ -163,7 +166,7 @@ const AdminAppealsPage = () => {
                             <MenuItem value="new">Новые</MenuItem>
                             <MenuItem value="resolved">Отвеченные</MenuItem>
                         </Select>
-                    </FormControl>
+                    </StyledFormControl>
 
                     {appeals?.length > 0 && (
                         <Stack spacing={4}>

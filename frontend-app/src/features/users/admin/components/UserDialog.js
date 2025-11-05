@@ -8,10 +8,11 @@ import {
     Box,
     MenuItem,
     Select,
-    FormControl,
     InputLabel,
 } from "@mui/material";
 import StyledTextArea from "../../../../shared/ui/StyledTextArea";
+import StyledFormControl from "../../../../shared/ui/StyledFormControl";
+
 
 const UserDialog = ({ open, onClose, user, onSubmit }) => {
     const [formData, setFormData] = useState({
@@ -78,7 +79,7 @@ const UserDialog = ({ open, onClose, user, onSubmit }) => {
                             disabled={!!user}
                         />
 
-                        <FormControl fullWidth margin="normal">
+                        <StyledFormControl fullWidth margin="normal">
                             <InputLabel>Роль</InputLabel>
                             <Select
                                 name="role"
@@ -90,7 +91,7 @@ const UserDialog = ({ open, onClose, user, onSubmit }) => {
                                 {/* <MenuItem value="owner">Собственник</MenuItem> */}
                                 <MenuItem value="admin">Администратор</MenuItem>
                             </Select>
-                        </FormControl>
+                        </StyledFormControl>
                     </Box>
                 </form>
             </DialogContent>

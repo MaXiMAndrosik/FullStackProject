@@ -46,6 +46,10 @@ import {
     ContactMail as ContactMailIcon,
     ListAlt as ListAltIcon,
     SettingsInputHdmi as MetersIcon,
+    Payment as PaymentIcon,
+    TableChart as TableChartIcon,
+    AccountBalanceWallet as AccountBalanceWalletIcon,
+    Assessment as AssessmentIcon,
 } from "@mui/icons-material";
 
 export default function MenuContent() {
@@ -142,6 +146,38 @@ export default function MenuContent() {
                 )}
                 {/* Вложенные пункты */}
                 <Collapse in={openOffice} timeout="auto" unmountOnExit>
+                    {/* Тарифы и услуги */}
+                    <ListItem
+                        disablePadding
+                        sx={{ display: "block", paddingLeft: 2 }}
+                    >
+                        <ListItemButton
+                            component={Link}
+                            to="/owner/services"
+                            selected={location.pathname === "/owner/services"}
+                        >
+                            <ListItemIcon>
+                                <AttachMoneyIcon />{" "}
+                            </ListItemIcon>
+                            <ListItemText secondary="Тарифы и услуги" />
+                        </ListItemButton>
+                    </ListItem>
+                    {/* Показания счетчиков */}
+                    <ListItem
+                        disablePadding
+                        sx={{ display: "block", paddingLeft: 2 }}
+                    >
+                        <ListItemButton
+                            component={Link}
+                            to="/owner/meters"
+                            selected={location.pathname === "/owner/meters"}
+                        >
+                            <ListItemIcon>
+                                <ElectricMeterIcon />
+                            </ListItemIcon>
+                            <ListItemText secondary="Показания счетчиков" />
+                        </ListItemButton>
+                    </ListItem>
                     {/* Квитанции */}
                     <ListItem
                         disablePadding
@@ -172,38 +208,6 @@ export default function MenuContent() {
                                 <FormatListBulletedIcon />
                             </ListItemIcon>
                             <ListItemText secondary="История начислений" />
-                        </ListItemButton>
-                    </ListItem>
-                    {/* Показания счетчиков */}
-                    <ListItem
-                        disablePadding
-                        sx={{ display: "block", paddingLeft: 2 }}
-                    >
-                        <ListItemButton
-                            component={Link}
-                            to="/user/meters"
-                            selected={location.pathname === "/user/meters"}
-                        >
-                            <ListItemIcon>
-                                <ElectricMeterIcon />
-                            </ListItemIcon>
-                            <ListItemText secondary="Показания счетчиков" />
-                        </ListItemButton>
-                    </ListItem>
-                    {/* Тарифы и услуги */}
-                    <ListItem
-                        disablePadding
-                        sx={{ display: "block", paddingLeft: 2 }}
-                    >
-                        <ListItemButton
-                            component={Link}
-                            to="/owner/services"
-                            selected={location.pathname === "/owner/services"}
-                        >
-                            <ListItemIcon>
-                                <AttachMoneyIcon />{" "}
-                            </ListItemIcon>
-                            <ListItemText secondary="Тарифы и услуги" />
                         </ListItemButton>
                     </ListItem>
                     {/* Профиль */}
@@ -403,7 +407,58 @@ export default function MenuContent() {
                         </ListItemButton>
                     </ListItem>
                 </Collapse>
-                {/* Настройки услуг и тарифов */}
+                {/* Управление объектами */}
+                {userRole === "admin" && (
+                    <ListItem
+                        disablePadding
+                        sx={{
+                            display: "block",
+                            borderTop: "1px solid rgba(0, 0, 0, 0.12)",
+                            paddingTop: 1,
+                        }}
+                    >
+                        <ListItemButton
+                            onClick={() => setOpenObjects(!openObjects)}
+                        >
+                            <ListItemIcon>
+                                <ApartmentIcon />
+                            </ListItemIcon>
+                            <ListItemText secondary="Объекты ЖСПК" />
+                            {openObjects ? (
+                                <ExpandLessIcon />
+                            ) : (
+                                <ExpandMoreIcon />
+                            )}
+                        </ListItemButton>
+                    </ListItem>
+                )}
+                <Collapse in={openObjects} timeout="auto" unmountOnExit>
+                    <ListItem disablePadding sx={{ pl: 3 }}>
+                        <ListItemButton
+                            component={Link}
+                            to="/admin/apartments"
+                            selected={location.pathname === "/admin/apartments"}
+                        >
+                            <ListItemIcon>
+                                <ApartmentIcon />
+                            </ListItemIcon>
+                            <ListItemText secondary="Квартиры" />
+                        </ListItemButton>
+                    </ListItem>
+                    <ListItem disablePadding sx={{ pl: 3 }}>
+                        <ListItemButton
+                            component={Link}
+                            to="/admin/meters"
+                            selected={location.pathname === "/admin/meters"}
+                        >
+                            <ListItemIcon>
+                                <MetersIcon />
+                            </ListItemIcon>
+                            <ListItemText secondary="Приборы учета" />
+                        </ListItemButton>
+                    </ListItem>
+                </Collapse>
+                {/* Бухгалтерия */}
                 {userRole === "admin" && (
                     <ListItem
                         disablePadding
@@ -417,7 +472,7 @@ export default function MenuContent() {
                             <ListItemIcon>
                                 <AttachMoneyIcon />
                             </ListItemIcon>
-                            <ListItemText secondary="Тарифы и услуги" />
+                            <ListItemText secondary="Бухгалтерия" />
                             {openServices ? (
                                 <ExpandLessIcon />
                             ) : (
@@ -469,57 +524,7 @@ export default function MenuContent() {
                             <ListItemText secondary="Индивидуальные настройки услуг" />
                         </ListItemButton>
                     </ListItem>
-                </Collapse>
-                {/* Управление объектами */}
-                {userRole === "admin" && (
-                    <ListItem
-                        disablePadding
-                        sx={{
-                            display: "block",
-                            borderTop: "1px solid rgba(0, 0, 0, 0.12)",
-                            paddingTop: 1,
-                        }}
-                    >
-                        <ListItemButton
-                            onClick={() => setOpenObjects(!openObjects)}
-                        >
-                            <ListItemIcon>
-                                <ApartmentIcon />
-                            </ListItemIcon>
-                            <ListItemText secondary="Объекты" />
-                            {openObjects ? (
-                                <ExpandLessIcon />
-                            ) : (
-                                <ExpandMoreIcon />
-                            )}
-                        </ListItemButton>
-                    </ListItem>
-                )}
-                <Collapse in={openObjects} timeout="auto" unmountOnExit>
-                    <ListItem disablePadding sx={{ pl: 3 }}>
-                        <ListItemButton
-                            component={Link}
-                            to="/admin/apartments"
-                            selected={location.pathname === "/admin/apartments"}
-                        >
-                            <ListItemIcon>
-                                <ApartmentIcon />
-                            </ListItemIcon>
-                            <ListItemText secondary="Квартиры" />
-                        </ListItemButton>
-                    </ListItem>
-                    <ListItem disablePadding sx={{ pl: 3 }}>
-                        <ListItemButton
-                            component={Link}
-                            to="/admin/meters"
-                            selected={location.pathname === "/admin/meters"}
-                        >
-                            <ListItemIcon>
-                                <MetersIcon />
-                            </ListItemIcon>
-                            <ListItemText secondary="Счетчики" />
-                        </ListItemButton>
-                    </ListItem>
+                    {/* Показания счетчиков */}
                     <ListItem disablePadding sx={{ pl: 3 }}>
                         <ListItemButton
                             component={Link}
@@ -531,7 +536,37 @@ export default function MenuContent() {
                             <ListItemIcon>
                                 <ListAltIcon />
                             </ListItemIcon>
-                            <ListItemText secondary="Показания" />
+                            <ListItemText secondary="Показания счетчиков" />
+                        </ListItemButton>
+                    </ListItem>
+                    {/* Таблица платежей */}
+                    <ListItem disablePadding sx={{ pl: 3 }}>
+                        <ListItemButton
+                            component={Link}
+                            to="/admin/payment-table"
+                            selected={
+                                location.pathname === "/admin/payment-table"
+                            }
+                        >
+                            <ListItemIcon>
+                                <TableChartIcon />
+                            </ListItemIcon>
+                            <ListItemText secondary="Таблица платежей" />
+                        </ListItemButton>
+                    </ListItem>
+                    {/* Начисления */}
+                    <ListItem disablePadding sx={{ pl: 3 }}>
+                        <ListItemButton
+                            component={Link}
+                            to="/admin/payment-table"
+                            selected={
+                                location.pathname === "/admin/payment-table"
+                            }
+                        >
+                            <ListItemIcon>
+                                <AccountBalanceWalletIcon />
+                            </ListItemIcon>
+                            <ListItemText secondary="Начисления" />
                         </ListItemButton>
                     </ListItem>
                 </Collapse>
@@ -597,6 +632,24 @@ export default function MenuContent() {
                 </ListItemIcon>
                 <ListItemIcon>
                     <InfoIcon />
+                </ListItemIcon> */}
+                {/* // Вариант 1 - Платежи/транзакции */}
+                {/* <ListItemIcon><PaymentIcon /></ListItemIcon> */}
+                {/* // Вариант 2 - Таблица/список */}
+                {/* <ListItemIcon>
+                    <TableChartIcon />
+                </ListItemIcon> */}
+                {/* // Вариант 3 - Деньги + таблица */}
+                {/* <ListItemIcon>
+                    <AccountBalanceWalletIcon />
+                </ListItemIcon> */}
+                {/* // Вариант 4 - Список операций */}
+                {/* <ListItemIcon>
+                    <ReceiptIcon />
+                </ListItemIcon> */}
+                {/* // Вариант 5 - Финансовая отчетность */}
+                {/* <ListItemIcon>
+                    <AssessmentIcon />
                 </ListItemIcon> */}
             </List>
         </Stack>

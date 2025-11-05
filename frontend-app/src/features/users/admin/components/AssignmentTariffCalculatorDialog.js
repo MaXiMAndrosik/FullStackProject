@@ -5,12 +5,12 @@ import {
     DialogContent,
     DialogActions,
     Button,
-    TextField,
     Box,
     Typography,
     Grid,
     Alert,
 } from "@mui/material";
+import StyledTextArea from "../../../../shared/ui/StyledTextArea";
 
 const AssignmentTariffCalculatorDialog = ({
     open,
@@ -151,7 +151,7 @@ const AssignmentTariffCalculatorDialog = ({
                         )}
                 </Box>
 
-                <TextField
+                <StyledTextArea
                     label="Общая стоимость услуги"
                     type="number"
                     value={totalCost}
@@ -163,7 +163,7 @@ const AssignmentTariffCalculatorDialog = ({
                 />
 
                 {serviceAssignment.calculation_type === "area" && (
-                    <TextField
+                    <StyledTextArea
                         label="Общая площадь (м²)"
                         type="number"
                         value={totalArea}
@@ -176,7 +176,7 @@ const AssignmentTariffCalculatorDialog = ({
                 )}
 
                 {serviceAssignment.calculation_type === "meter" && (
-                    <TextField
+                    <StyledTextArea
                         label="Объем потребления"
                         type="number"
                         value={consumption}
@@ -222,7 +222,8 @@ const AssignmentTariffCalculatorDialog = ({
                                 </Typography>
 
                                 <Typography variant="body1" gutterBottom>
-                                    <strong>Порядок расчета:</strong> Общая стоимость /{" "}
+                                    <strong>Порядок расчета:</strong> Общая
+                                    стоимость /{" "}
                                     {serviceAssignment.calculation_type ===
                                     "area"
                                         ? "Общая площадь"

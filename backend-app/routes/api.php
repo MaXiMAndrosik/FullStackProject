@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\Admin\ApartmentController;
 use App\Http\Controllers\Api\Admin\AssignmentTariffController;
 use App\Http\Controllers\Api\Admin\MeterTypeController;
 use App\Http\Controllers\Api\Admin\MeterController;
+use App\Http\Controllers\Api\MeterReadingController;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Redis;
 
@@ -72,6 +73,10 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
         // Получение данных о действующих услугах и тарифах для собственника
         Route::get('/owner/services', [ServiceController::class, 'show']);
         Route::get('/owner/service-assignments', [ServiceAssignmentController::class, 'show']);
+        // Показания счетчиков для собственника
+        Route::get('/owner/meter-readings', [MeterReadingController::class, 'forOwner']);
+        Route::post('/owner/meter-readings', [MeterReadingController::class, 'store']);
+        Route::put('/owner/meter-readings/{meterReading}', [MeterReadingController::class, 'update']);
     });
 
     // ---------------------------------------------------------------------------------------------------------------------------
@@ -120,6 +125,16 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
 
         // Получение счетчиков по квартире
         Route::get('apartments/{apartment}/meters', [MeterController::class, 'byApartment']);
+
+        // Управление показаниями счетчиков
+        Route::get('/admin/meter-readings', [MeterReadingController::class, 'index']);
+        Route::post('/admin/meter-readings/bulk', [MeterReadingController::class, 'bulkStore']);
+        Route::post('/admin/meter-readings', [MeterReadingController::class, 'store']);
+        Route::put('/admin/meter-readings/{meterReading}', [MeterReadingController::class, 'update']);
+        Route::delete('/admin/meter-readings/{meterReading}', [MeterReadingController::class, 'destroy']);
+        Route::get('/admin/meters/{meter}/readings', [MeterReadingController::class, 'byMeter']);
+        Route::post('/meter-readings/fix', [MeterReadingController::class, 'fixReadings']);
+        Route::post('/meter-readings/unfix', [MeterReadingController::class, 'unfixReadings']);
     });
 });
 

@@ -1,4 +1,5 @@
-import { useState, Fragment  } from "react";
+import { useState, Fragment } from "react";
+import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { styled } from "@mui/material/styles";
 import { dividerClasses } from "@mui/material/Divider";
@@ -14,6 +15,7 @@ const MenuItem = styled(MuiMenuItem)({
 });
 
 export default function UserMenu() {
+    const authUser = useSelector((state) => state.auth.user);
     const [anchorEl, setAnchorEl] = useState(null);
     const open = Boolean(anchorEl);
 
@@ -35,11 +37,16 @@ export default function UserMenu() {
             >
                 <Avatar
                     sizes="small"
-                    alt="Riley Carter"
-                    // src="/static/images/avatar/7.jpg"
-                    sx={{ width: 36, height: 36 }}
                     variant="rounded"
-                />
+                    sx={{ width: 36, height: 36 }}
+                >
+                    {authUser?.name
+                        ?.split(/\s+/)
+                        .filter(Boolean)
+                        .slice(0, 2)
+                        .map((word) => word[0].toUpperCase())
+                        .join("")}
+                </Avatar>
             </MenuButton>
             <Menu
                 anchorEl={anchorEl}

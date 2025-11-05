@@ -5,13 +5,13 @@ import {
     DialogContent,
     DialogActions,
     Button,
-    TextField,
     Box,
     Typography,
     Grid,
     CircularProgress,
     Alert,
 } from "@mui/material";
+import StyledTextArea from "../../../../shared/ui/StyledTextArea";
 import { showError } from "../../../../shared/services/notificationService";
 
 const TariffCalculatorDialog = ({
@@ -181,7 +181,7 @@ const TariffCalculatorDialog = ({
                     )}
                 </Box>
 
-                <TextField
+                <StyledTextArea
                     label="Общая стоимость услуги для дома"
                     type="number"
                     value={totalCost}
@@ -193,7 +193,7 @@ const TariffCalculatorDialog = ({
                 />
 
                 {showConsumptionInput && (
-                    <TextField
+                    <StyledTextArea
                         label={`Общее потребление (${service?.unit || "ед."})`}
                         type="number"
                         value={consumption}
@@ -249,7 +249,8 @@ const TariffCalculatorDialog = ({
                                 </Typography>
 
                                 <Typography variant="body1" gutterBottom>
-                                    <strong>Порядок расчета:</strong> Общая стоимость /{" "}
+                                    <strong>Порядок расчета:</strong> Общая
+                                    стоимость /{" "}
                                     {service?.calculation_type === "area"
                                         ? "Общая площадь дома"
                                         : "Общее потребление"}{" "}

@@ -21,12 +21,12 @@ class MeterTypeSeeder extends Seeder
                 'description' => 'Счетчик горячей воды'
             ],
             [
-                'name' => 'Электричество',
+                'name' => 'Электроснабжение',
                 'unit' => 'kwh',
                 'description' => 'Электросчетчик'
             ],
             [
-                'name' => 'Газ',
+                'name' => 'Газоснабжение',
                 'unit' => 'm3',
                 'description' => 'Газовый счетчик'
             ],

@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
             TariffSeeder::class,
             MeterTypeSeeder::class,
             MeterSeeder::class,
+            MeterReadingSeeder::class,
         ]);
     }
 }

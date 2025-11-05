@@ -6,12 +6,12 @@ import {
     DialogActions,
     Button,
     Box,
-    FormControl,
     InputLabel,
     Select,
     MenuItem,
 } from "@mui/material";
 import StyledTextArea from "../../../../shared/ui/StyledTextArea";
+import StyledFormControl from "../../../../shared/ui/StyledFormControl";
 
 const ServiceDialog = ({
     open,
@@ -88,7 +88,7 @@ const ServiceDialog = ({
                     </StyledTextArea>
 
                     {calculationType === "meter" && (
-                        <FormControl fullWidth margin="normal" required>
+                        <StyledFormControl fullWidth margin="normal" required>
                             <InputLabel>Единица измерения</InputLabel>
                             <Select
                                 name="unit"
@@ -108,7 +108,7 @@ const ServiceDialog = ({
                                     кВт·ч (киловатт-час)
                                 </MenuItem>
                             </Select>
-                        </FormControl>
+                        </StyledFormControl>
                     )}
 
                     <Box sx={{ display: "flex", alignItems: "center", mt: 2 }}>

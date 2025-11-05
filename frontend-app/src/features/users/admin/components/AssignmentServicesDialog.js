@@ -5,7 +5,6 @@ import {
     DialogContent,
     DialogActions,
     Button,
-    FormControl,
     InputLabel,
     Select,
     MenuItem,
@@ -15,6 +14,7 @@ import {
     Typography,
 } from "@mui/material";
 import StyledTextArea from "../../../../shared/ui/StyledTextArea";
+import StyledFormControl from "../../../../shared/ui/StyledFormControl";
 
 const AssignmentDialog = ({
     open,
@@ -76,7 +76,7 @@ const AssignmentDialog = ({
 
                     {/* Тип привязки - только для создания */}
                     {!currentAssignment && (
-                        <FormControl fullWidth margin="normal" required>
+                        <StyledFormControl fullWidth margin="normal" required>
                             <InputLabel>Тип привязки</InputLabel>
                             <Select
                                 name="scope"
@@ -99,12 +99,12 @@ const AssignmentDialog = ({
                                     К подъездам
                                 </MenuItem>
                             </Select>
-                        </FormControl>
+                        </StyledFormControl>
                     )}
 
                     {/* Выбор объектов - только для создания */}
                     {!currentAssignment && assignmentScope === "entrance" && (
-                        <FormControl fullWidth margin="normal" required>
+                        <StyledFormControl fullWidth margin="normal" required>
                             <InputLabel>Подъезды</InputLabel>
                             <Select
                                 multiple
@@ -126,11 +126,11 @@ const AssignmentDialog = ({
                                     </MenuItem>
                                 ))}
                             </Select>
-                        </FormControl>
+                        </StyledFormControl>
                     )}
 
                     {!currentAssignment && assignmentScope === "apartment" && (
-                        <FormControl fullWidth margin="normal" required>
+                        <StyledFormControl fullWidth margin="normal" required>
                             <InputLabel>Квартиры</InputLabel>
                             <Select
                                 multiple
@@ -163,7 +163,7 @@ const AssignmentDialog = ({
                                     </MenuItem>
                                 ))}
                             </Select>
-                        </FormControl>
+                        </StyledFormControl>
                     )}
 
                     {/* Показываем текущую привязку при редактировании */}
@@ -220,7 +220,7 @@ const AssignmentDialog = ({
                     </StyledTextArea>
 
                     {calculationType === "meter" && (
-                        <FormControl fullWidth margin="normal" required>
+                        <StyledFormControl fullWidth margin="normal" required>
                             <InputLabel>Единица измерения</InputLabel>
                             <Select
                                 name="unit"
@@ -241,7 +241,7 @@ const AssignmentDialog = ({
                                     кВт·ч (киловатт-час)
                                 </MenuItem>
                             </Select>
-                        </FormControl>
+                        </StyledFormControl>
                     )}
 
                     <Box sx={{ display: "flex", alignItems: "center", mt: 2 }}>

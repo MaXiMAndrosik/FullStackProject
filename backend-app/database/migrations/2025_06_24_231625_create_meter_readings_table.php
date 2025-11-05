@@ -14,9 +14,9 @@ return new class extends Migration
         Schema::create('meter_readings', function (Blueprint $table) {
             $table->id();
             $table->foreignId('meter_id')->constrained()->comment('Счётчик');
-            $table->date('period')->comment('Период показаний (YYYY-MM-01)');
-            $table->decimal('value', 12, 4)->comment('Значение показаний');
-            $table->boolean('is_auto')->default(false)->comment('Автоматическое снятие');
+            $table->date('period')->comment('Период показаний (YYYY-MM-25)');
+            $table->integer('value')->comment('Значение показаний');
+            $table->boolean('is_fixed')->default(false)->comment('Запрет изменений');
             $table->timestamps();
 
             $table->unique(['meter_id', 'period']);

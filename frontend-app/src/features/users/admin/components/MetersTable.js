@@ -227,14 +227,14 @@ const MetersTable = ({
                     gap: 2,
                 }}
             >
-                Управление
+                Управление приборами
                 <Typography
                     component="span"
                     variant="h2"
                     color="primary"
                     sx={{ fontWeight: "bold" }}
                 >
-                    счетчиками
+                    учета
                 </Typography>
             </Typography>
 
@@ -244,7 +244,6 @@ const MetersTable = ({
                 <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
                     <TextField
                         select
-                        label="Фильтр по типу"
                         value={typeFilter}
                         onChange={(e) => {
                             setTypeFilter(e.target.value);
@@ -252,6 +251,13 @@ const MetersTable = ({
                         size="small"
                         sx={{ width: 200 }}
                         disabled={meterTypes.length === 0}
+                        SelectProps={{
+                            displayEmpty: true,
+                            renderValue:
+                                typeFilter !== ""
+                                    ? undefined
+                                    : () => "Все типы",
+                        }}
                     >
                         <MenuItem value="">Все типы</MenuItem>
                         {meterTypes.map((type) => (
