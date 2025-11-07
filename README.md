@@ -1,4 +1,4 @@
-https://zenitchik4-service-app.vercel.app/
+https://determined-nobel.178-124-141-140.plesk.page/
 
 
 # 🏠 Информационно-управляющий портал ЖСПК "Зенитчик-4"
