@@ -21,6 +21,12 @@ return [
 
     'allowed_origins' => ['http://localhost:3000'],
 
+    // 'allowed_origins' => [
+    //     'http://localhost:3000',
+    //     'https://zenitchik4-service-app.vercel.app',
+    //     'https://*.vercel.app'
+    // ],
+
     'allowed_origins_patterns' => [],
 
     'allowed_headers' => ['*'],

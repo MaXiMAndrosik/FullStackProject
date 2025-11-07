@@ -23,6 +23,13 @@ use App\Http\Controllers\Api\MeterReadingController;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Redis;
 
+// Обработка CORS preflight OPTIONS запросов
+Route::options('/{any}', function () {
+    return response()->noContent();
+})->where('any', '.*');
+
+Route::get('/test-public', [\App\Http\Controllers\Api\TestController::class, 'publicData']);
+
 Route::prefix('auth')->group(function () {
     Route::post('/register', [RegisterController::class, 'register']);
     Route::post('/login', [LoginController::class, 'login'])->middleware('throttle:5,1');

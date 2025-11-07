@@ -1,4 +1,4 @@
-zenitchik4-home-service.vercel.app
+https://zenitchik4-service-app.vercel.app/
 
 
 # 🏠 Информационно-управляющий портал ЖСПК "Зенитчик-4"
