@@ -1,0 +1,20 @@
+{
+    "short_name": "Зенитчик-4",
+    "name": "ЖСПК Зенитчик-4",
+    "description": "Автоматизированная платформа для управления жилым комплексом и взаимодействия членов кооператива",
+    "icons": [
+        {
+            "src": "/android-chrome-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "/android-chrome-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ],
+    "theme_color": "#ffffff",
+    "background_color": "#ffffff",
+    "display": "standalone"
+}

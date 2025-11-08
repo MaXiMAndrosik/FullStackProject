@@ -124,6 +124,7 @@ WEATHER_API_KEY=YOUR_API_KEY
 php artisan config:clear
 php artisan config:cache
 php artisan route:clear
+php artisan migrate:fresh --seed
 ```
 
 ## Если фронтенд будет на отдельном поддомене:
