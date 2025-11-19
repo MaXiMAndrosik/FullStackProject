@@ -1,3 +1,16 @@
-# https://www.robotstxt.org/robotstxt.html
 User-agent: *
-Disallow:
+# Разрешаем важные страницы
+Allow: /
+Allow: /services
+Allow: /about
+
+# Запрещаем технические разделы
+Disallow: /api/
+Disallow: /admin/
+Disallow: /owner/
+
+# Sitemap
+Sitemap: https://zenitchick4.online/sitemap.xml
+
+# ЖСПК "Зенитчик-4"
+# Автоматически сгенерировано 2025-11-19

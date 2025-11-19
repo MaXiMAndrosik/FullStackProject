@@ -15,7 +15,7 @@ const OwnerMeterReadingPage = () => {
     useEffect(() => {
         fetchReadings();
         fetchServices();
-    }, []);
+    }, [fetchReadings]);
 
     const fetchReadings = async () => {
         setLoading(true);
@@ -220,7 +220,6 @@ const OwnerMeterReadingPage = () => {
                         onRefresh={fetchReadings}
                     />
                 </Box>
-
             </Container>
         </Box>
     );
