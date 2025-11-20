@@ -115,17 +115,6 @@ export default function MenuContent() {
                             </Badge>
                         </ListItemIcon>
                         <ListItemText secondary="Объявления" />
-                        {/* {hasAds && (
-                            <Box
-                                sx={{
-                                    ml: 1,
-                                    width: 8,
-                                    height: 8,
-                                    borderRadius: "50%",
-                                    bgcolor: "error.main",
-                                }}
-                            />
-                        )} */}
                     </ListItemButton>
                 </ListItem>
                 {/* Личный кабинет */}
@@ -525,7 +514,7 @@ export default function MenuContent() {
                         </ListItemButton>
                     </ListItem>
                     {/* Показания счетчиков */}
-                    <ListItem disablePadding sx={{ pl: 3 }}>
+                    <ListItem disablePadding sx={{ pl: 2 }}>
                         <ListItemButton
                             component={Link}
                             to="/admin/meter-readings"
@@ -540,7 +529,7 @@ export default function MenuContent() {
                         </ListItemButton>
                     </ListItem>
                     {/* Таблица платежей */}
-                    <ListItem disablePadding sx={{ pl: 3 }}>
+                    <ListItem disablePadding sx={{ pl: 2 }}>
                         <ListItemButton
                             component={Link}
                             to="/admin/payment-table"
@@ -555,7 +544,7 @@ export default function MenuContent() {
                         </ListItemButton>
                     </ListItem>
                     {/* Начисления */}
-                    <ListItem disablePadding sx={{ pl: 3 }}>
+                    <ListItem disablePadding sx={{ pl: 2 }}>
                         <ListItemButton
                             component={Link}
                             to="/admin/payment-table"

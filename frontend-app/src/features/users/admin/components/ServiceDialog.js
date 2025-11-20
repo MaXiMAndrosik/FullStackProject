@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
     Dialog,
     DialogTitle,
@@ -6,12 +6,12 @@ import {
     DialogActions,
     Button,
     Box,
-    InputLabel,
-    Select,
     MenuItem,
+    Checkbox,
+    ListItemText,
+    Chip,
 } from "@mui/material";
 import StyledTextArea from "../../../../shared/ui/StyledTextArea";
-import StyledFormControl from "../../../../shared/ui/StyledFormControl";
 
 const ServiceDialog = ({
     open,
@@ -20,14 +20,70 @@ const ServiceDialog = ({
     onSubmit,
     calculationType,
     setCalculationType,
+    meterTypes = [],
 }) => {
+    const [selectedMeterTypes, setSelectedMeterTypes] = useState([]);
+
+    // Инициализация выбранных типов счетчиков при изменении currentService
+    useEffect(() => {
+        if (currentService?.meter_types) {
+            const selectedIds = currentService.meter_types.map(
+                (type) => type.id
+            );
+            setSelectedMeterTypes(selectedIds);
+        } else {
+            setSelectedMeterTypes([]);
+        }
+    }, [currentService, open]);
+
+    // Получаем ВСЕ типы счетчиков (включая неактивные)
+    const allMeterTypes = meterTypes;
+
+    const handleMeterTypeChange = (event) => {
+        const value = event.target.value;
+        setSelectedMeterTypes(value);
+    };
+
+    // Обработчик отправки формы
+    const handleFormSubmit = (event) => {
+        // event.preventDefault();
+        const formData = new FormData(event.target);
+        const data = Object.fromEntries(formData.entries());
+
+        // Добавляем выбранные типы счетчиков
+        data.meter_type_ids = selectedMeterTypes;
+
+        // Преобразуем boolean значения
+        data.is_active = data.is_active === "on";
+
+        onSubmit(event, data);
+    };
+
+    // Получаем неактивные типы счетчиков для информации
+    const inactiveMeterTypes = allMeterTypes.filter((type) => !type.is_active);
+    const hasInactiveSelected = selectedMeterTypes.some((id) =>
+        inactiveMeterTypes.some((inactiveType) => inactiveType.id === id)
+    );
+
+    // Функция для преобразования единиц измерения в русские названия
+    const getUnitLabel = (unit) => {
+        const unitLabels = {
+            m3: "м³",
+            gcal: "Гкал",
+            kwh: "кВт·ч",
+            fixed: "фикс.",
+            m2: "м²",
+        };
+        return unitLabels[unit] || unit;
+    };
+
     return (
         <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
             <DialogTitle>
                 {currentService ? "Редактирование услуги" : "Новая услуга"}
             </DialogTitle>
             <DialogContent>
-                <form onSubmit={onSubmit} id="service-form">
+                <form onSubmit={handleFormSubmit} id="service-form">
                     <StyledTextArea
                         name="name"
                         label="Название"
@@ -88,27 +144,80 @@ const ServiceDialog = ({
                     </StyledTextArea>
 
                     {calculationType === "meter" && (
-                        <StyledFormControl fullWidth margin="normal" required>
-                            <InputLabel>Единица измерения</InputLabel>
-                            <Select
-                                name="unit"
-                                defaultValue={
-                                    currentService?.tariffs?.[0]?.unit || "m3"
-                                }
-                                label="Единица измерения"
-                                required
-                            >
-                                <MenuItem value="m3">
-                                    м³ (кубический метр)
+                        <StyledTextArea
+                            name="meter_type_ids"
+                            label="Типы счетчиков"
+                            select
+                            SelectProps={{
+                                multiple: true,
+                                native: false,
+                                renderValue: (selected) => (
+                                    <Box
+                                        sx={{
+                                            display: "flex",
+                                            flexWrap: "wrap",
+                                            gap: 0.5,
+                                        }}
+                                    >
+                                        {selected.map((value) => {
+                                            const selectedType =
+                                                allMeterTypes.find(
+                                                    (type) => type.id === value
+                                                );
+                                            const unitLabel = getUnitLabel(
+                                                selectedType?.unit
+                                            );
+                                            return (
+                                                <Chip
+                                                    key={value}
+                                                    label={
+                                                        selectedType
+                                                            ? `${selectedType.name} (${unitLabel})`
+                                                            : value
+                                                    }
+                                                    size="small"
+                                                    color={
+                                                        selectedType?.is_active
+                                                            ? "primary"
+                                                            : "default"
+                                                    }
+                                                    variant="outlined"
+                                                />
+                                            );
+                                        })}
+                                    </Box>
+                                ),
+                            }}
+                            value={selectedMeterTypes}
+                            onChange={handleMeterTypeChange}
+                            fullWidth
+                            margin="normal"
+                            required
+                        >
+                            {allMeterTypes.length > 0 ? (
+                                allMeterTypes.map((type) => {
+                                    const unitLabel = getUnitLabel(type.unit);
+                                    return (
+                                        <MenuItem key={type.id} value={type.id}>
+                                            <Checkbox
+                                                checked={
+                                                    selectedMeterTypes.indexOf(
+                                                        type.id
+                                                    ) > -1
+                                                }
+                                            />
+                                            <ListItemText
+                                                primary={`${type.name} (${unitLabel})`}
+                                            />
+                                        </MenuItem>
+                                    );
+                                })
+                            ) : (
+                                <MenuItem disabled>
+                                    Нет доступных типов счетчиков
                                 </MenuItem>
-                                <MenuItem value="gcal">
-                                    Гкал (гигакалория)
-                                </MenuItem>
-                                <MenuItem value="kwh">
-                                    кВт·ч (киловатт-час)
-                                </MenuItem>
-                            </Select>
-                        </StyledFormControl>
+                            )}
+                        </StyledTextArea>
                     )}
 
                     <Box sx={{ display: "flex", alignItems: "center", mt: 2 }}>
@@ -126,7 +235,15 @@ const ServiceDialog = ({
             </DialogContent>
             <DialogActions>
                 <Button onClick={onClose}>Отмена</Button>
-                <Button type="submit" form="service-form" variant="contained">
+                <Button
+                    type="submit"
+                    form="service-form"
+                    variant="contained"
+                    disabled={
+                        calculationType === "meter" &&
+                        allMeterTypes.length === 0
+                    }
+                >
                     Сохранить
                 </Button>
             </DialogActions>

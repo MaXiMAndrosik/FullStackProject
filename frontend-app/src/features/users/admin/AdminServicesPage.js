@@ -21,22 +21,34 @@ const AdminServicesPage = () => {
     const [currentTariff, setCurrentTariff] = useState(null);
     const [currentService, setCurrentService] = useState(null);
     const [apartments, setApartments] = useState([]);
+    const [meterTypes, setMeterTypes] = useState([]);
 
     // Загрузка услуг и тарифов
     useEffect(() => {
         fetchServices();
         fetchApartments();
+        fetchMeterTypes();
     }, []);
 
     // Загрузка сервисов с тарифами
     const fetchServices = () => {
         apiClient
             .get("/admin/services")
-            .then((res) => setServices(res.data))
+            .then((res) => setServices(res.data.data))
             .catch((error) => {
                 showError("Ошибка загрузки услуг");
                 setServices([]);
             });
+    };
+
+    // Загрузка типов счетчиков для привязки
+    const fetchMeterTypes = async () => {
+        try {
+            const response = await apiClient.get("/admin/meter-types");
+            setMeterTypes(response.data);
+        } catch (error) {
+            console.error("Ошибка при загрузке типов счетчиков:", error);
+        }
     };
 
     // Загрузка квартир для расчета
@@ -100,6 +112,7 @@ const AdminServicesPage = () => {
     // Обработчики диалога для услуг
     const handleServiceOpen = (service = null) => {
         setCurrentService(service);
+        setCalculationType(service?.calculation_type || "fixed");
         setServicesOpen(true);
     };
     const handleServiceClose = () => {
@@ -110,7 +123,36 @@ const AdminServicesPage = () => {
     const handleServiceSubmit = async (e) => {
         e.preventDefault();
         const data = new FormData(e.target);
-        const serviceData = Object.fromEntries(data.entries());
+        // const serviceData = Object.fromEntries(data.entries());
+        const serviceData = {};
+        // Обрабатываем все поля, кроме meter_type_ids
+        for (let [key, value] of data.entries()) {
+            if (key !== "meter_type_ids") {
+                serviceData[key] = value;
+            }
+        }
+
+        // Правильно обрабатываем meter_type_ids - разбиваем строку на массив чисел
+        const meterTypeIdsValue = data.get("meter_type_ids");
+        console.log("meterTypeIds raw value:", meterTypeIdsValue);
+
+        if (meterTypeIdsValue) {
+            // Если это строка с запятыми, разбиваем на массив
+            if (
+                typeof meterTypeIdsValue === "string" &&
+                meterTypeIdsValue.includes(",")
+            ) {
+                serviceData.meter_type_ids = meterTypeIdsValue
+                    .split(",")
+                    .map((id) => parseInt(id.trim()));
+            } else {
+                // Если это одиночное значение
+                serviceData.meter_type_ids = [parseInt(meterTypeIdsValue)];
+            }
+        } else {
+            serviceData.meter_type_ids = [];
+        }
+
         serviceData.is_active = serviceData.is_active === "on";
 
         try {
@@ -259,6 +301,7 @@ const AdminServicesPage = () => {
                     onEdit={handleServiceOpen}
                     onDelete={handleServiceDelete}
                     onToggle={handleServiceToggle}
+                    meterTypes={meterTypes}
                 />
 
                 <TariffsTable
@@ -277,6 +320,7 @@ const AdminServicesPage = () => {
                 onSubmit={handleServiceSubmit}
                 calculationType={calculationType}
                 setCalculationType={setCalculationType}
+                meterTypes={meterTypes}
             />
 
             <TariffDialog
@@ -287,7 +331,6 @@ const AdminServicesPage = () => {
                 services={services}
                 apartments={apartments}
             />
-
         </Box>
     );
 };

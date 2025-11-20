@@ -2,7 +2,7 @@ import React from "react";
 import { Button, Typography, Tooltip, Box } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 
-const TariffsTable = ({ tariffs, services, onEdit, onDelete }) => {
+const TariffsTable = ({ tariffs, onEdit, onDelete }) => {
     const columnsTariffs = [
         {
             field: "id",
@@ -38,33 +38,14 @@ const TariffsTable = ({ tariffs, services, onEdit, onDelete }) => {
             width: 150,
         },
         {
-            field: "is_current",
+            field: "status",
             headerName: "Статус",
             width: 120,
             sortable: true,
             renderCell: (params) => {
-                const today = new Date();
-                const startDate = new Date(params.row.start_date);
-                const endDate = params.row.end_date
-                    ? new Date(params.row.end_date)
-                    : null;
-
-                // Определяем статус тарифа
-                let status;
-                if (today < startDate) {
-                    status = "future"; // Тариф еще не вступил в силу
-                } else if (endDate && today > endDate) {
-                    status = "expired"; // Тариф устарел
-                } else {
-                    status = "current"; // Активный тариф
-                }
-
-                // Проверяем, активна ли услуга
-                const isServiceActive = services.some(
-                    (service) =>
-                        service.id === params.row.service_id &&
-                        service.is_active
-                );
+                const status = params.value; // 'current', 'future', 'expired'
+                const isServiceActive = params.row.service_is_active;
+                console.log("status = ", status);
 
                 // Определяем цвет в зависимости от статуса тарифа и активности услуги
                 let color;

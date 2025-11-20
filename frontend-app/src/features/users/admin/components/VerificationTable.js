@@ -117,22 +117,43 @@ const VerificationTable = ({ requests, loading, onViewDetails }) => {
                 </Typography>
             </Typography>
 
-            <DataGrid
-                rows={requests}
-                columns={columns}
-                pageSizeOptions={[10, 20, 50]}
-                initialState={{
-                    pagination: { paginationModel: { pageSize: 20 } },
-                }}
-                disableColumnResize
-                density="compact"
-            />
+            {requests?.length > 0 && (
+                <>
+                    <DataGrid
+                        rows={requests}
+                        columns={columns}
+                        pageSizeOptions={[10, 20, 50]}
+                        initialState={{
+                            pagination: { paginationModel: { pageSize: 20 } },
+                        }}
+                        disableColumnResize
+                        density="compact"
+                    />
 
-            <Box sx={{ textAlign: "center", mt: 2 }}>
-                <Typography variant="body2" color="text.secondary">
-                    Всего запросов: {requests.length}
+                    <Box sx={{ textAlign: "center", mt: 2 }}>
+                        <Typography variant="body2" color="text.secondary">
+                            Всего запросов: {requests.length}
+                        </Typography>
+                    </Box>
+                </>
+            )}
+
+            {requests?.length === 0 && (
+                <Typography
+                    variant="h5"
+                    sx={{
+                        textAlign: "center",
+                        mb: 4,
+                        display: "flex",
+                        flexDirection: { xs: "column", sm: "row" },
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 2,
+                    }}
+                >
+                    Нет запросов для верификации собственников
                 </Typography>
-            </Box>
+            )}
         </>
     );
 };

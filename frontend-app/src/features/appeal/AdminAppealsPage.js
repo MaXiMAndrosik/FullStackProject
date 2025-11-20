@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import {
-    Select,
     MenuItem,
     Button,
     Dialog,
@@ -16,6 +15,7 @@ import {
     Link,
     Card,
     CardContent,
+    TextField,
 } from "@mui/material";
 import { CalendarToday, Email } from "@mui/icons-material";
 import apiClient from "../../app/api/client";
@@ -24,7 +24,6 @@ import {
     showError,
 } from "../../shared/services/notificationService";
 import StyledTextArea from "../../shared/ui/StyledTextArea";
-import StyledFormControl from "../../shared/ui/StyledFormControl";
 
 const AdminAppealsPage = () => {
     const [appeals, setAppeals] = useState([]);
@@ -150,23 +149,30 @@ const AdminAppealsPage = () => {
                         </Typography>
                     </Typography>
 
-                    <StyledFormControl sx={{ mb: 2, minWidth: 120 }}>
-                        <Typography
-                            variant="body2"
-                            sx={{ color: "primary.main", mb: 0.5 }}
-                        >
-                            Статус
-                        </Typography>
-                        <Select
-                            value={statusFilter}
-                            onChange={(e) => setStatusFilter(e.target.value)}
-                            label="Статус"
-                        >
-                            <MenuItem value="all">Все</MenuItem>
-                            <MenuItem value="new">Новые</MenuItem>
-                            <MenuItem value="resolved">Отвеченные</MenuItem>
-                        </Select>
-                    </StyledFormControl>
+                    <Typography
+                        variant="body2"
+                        sx={{ color: "primary.main", mb: 0.5 }}
+                    >
+                        Статус
+                    </Typography>
+                    <TextField
+                        select
+                        value={statusFilter}
+                        onChange={(e) => setStatusFilter(e.target.value)}
+                        size="small"
+                        sx={{ mb: 2, minWidth: 120 }}
+                        SelectProps={{
+                            displayEmpty: true,
+                            renderValue:
+                                statusFilter !== "all"
+                                    ? undefined
+                                    : () => "Все статусы",
+                        }}
+                    >
+                        <MenuItem value="all">Все статусы</MenuItem>
+                        <MenuItem value="new">Новые</MenuItem>
+                        <MenuItem value="resolved">Отвеченные</MenuItem>
+                    </TextField>
 
                     {appeals?.length > 0 && (
                         <Stack spacing={4}>

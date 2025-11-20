@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Service;
 use App\Models\Tariff;
+use App\Models\Meter;
+use App\Http\Resources\ServiceResource;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -19,7 +21,8 @@ class ServiceController extends Controller
      */
     public function index()
     {
-        return Service::with('tariffs')->get();
+        $services = Service::with(['meterTypes', 'tariffs'])->get();
+        return ServiceResource::collection($services);
     }
 
     /**
@@ -28,34 +31,48 @@ class ServiceController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'code' => 'required|string|max:30|unique:services',
+            'code' => ['required', 'string', 'max:30', 'unique:services'],
             'name' => 'required|string|max:100',
             'type' => 'required|string|max:20',
             'description' => 'nullable|string',
             'calculation_type' => ['required', Rule::in(['fixed', 'meter', 'area'])],
+            'unit' => 'required_if:calculation_type,meter|string|max:100',
+            'meter_type_ids' => 'required_if:calculation_type,meter|array',
+            'meter_type_ids.*' => 'exists:meter_types,id',
             'is_active' => 'sometimes|boolean'
         ]);
 
-        // Создаем услугу
-        $service = Service::create($validated);
+        // Используем возврат из транзакции вместо передачи по ссылке
+        $service = DB::transaction(function () use ($validated) {
+            $service = Service::create($validated);
 
-        Log::info('ServiceController store', ['Service::create' => $service]);
+            // Привязываем типы счетчиков для услуг по счетчику
+            if ($service->calculation_type === 'meter' && isset($validated['meter_type_ids'])) {
+                $service->meterTypes()->sync($validated['meter_type_ids']);
 
-        // Определяем единицу измерения по типу расчета
-        $unit = $this->getDefaultUnit($validated['calculation_type']);
+                // Активируем счетчики, если услуга активна
+                if ($service->is_active) {
+                    Meter::whereIn('type_id', $validated['meter_type_ids'])
+                        ->update(['is_active' => true]);
+                }
+            }
 
-        // Создаем начальный тариф для услуги
-        $newTariff = Tariff::create([
-            'service_id' => $service->id,
-            'rate' => 0.0000, // Начальная ставка 0
-            'start_date' => Carbon::now(), // Начинается сегодня
-            'end_date' => null, // Бессрочно
-            'unit' => $unit,
-        ]);
+            // Создаем начальный тариф
+            Tariff::create([
+                'service_id' => $service->id,
+                'rate' => 0.00,
+                'unit' => $validated['unit'] ?? 'fixed',
+                'start_date' => Carbon::today(),
+                'end_date' => null,
+            ]);
 
-        Log::info('ServiceController store', ['Tariff::create' => $newTariff]);
+            return $service;
+        });
 
-        return response()->noContent(201);
+        // Загружаем отношения для возврата
+        $service->load(['meterTypes', 'tariffs']);
+
+        return new ServiceResource($service);
     }
 
     /**
@@ -63,8 +80,8 @@ class ServiceController extends Controller
      */
     public function update(Request $request, Service $service)
     {
-
         Log::debug('ServiceController update', ['Service' => $service]);
+        Log::debug('ServiceController update', ['Request' => $request]);
 
         $originalData = $service->toArray();
 
@@ -74,16 +91,76 @@ class ServiceController extends Controller
             'type' => 'required|string|max:20',
             'description' => 'nullable|string',
             'calculation_type' => ['sometimes', Rule::in(['fixed', 'meter', 'area'])],
+            'unit' => 'sometimes|string|max:100',
+            'meter_type_ids' => 'sometimes|array',
+            'meter_type_ids.*' => 'exists:meter_types,id',
             'is_active' => 'sometimes|boolean'
         ]);
 
-        $newUnit = $this->getDefaultUnit($validated['calculation_type'] ?? $service->calculation_type);
+        DB::transaction(function () use ($service, $validated, $originalData) {
+            $shouldCreateNewTariff = false;
+            $newUnit = null;
 
-        DB::transaction(function () use ($service, $validated, $newUnit, $originalData) {
+            $originalUnit = $originalData['unit'] ?? null;
+
+            // Проверяем, изменился ли calculation_type
+            if (isset($validated['calculation_type']) && $validated['calculation_type'] !== $originalData['calculation_type']) {
+                $shouldCreateNewTariff = true;
+                $newUnit = $this->getDefaultUnit($validated['calculation_type']);
+            }
+            // Проверяем, изменился ли unit
+            else if (isset($validated['unit']) && $validated['unit'] !== $originalUnit) {
+                $shouldCreateNewTariff = true;
+                $newUnit = $validated['unit'];
+            }
+
+            // Сохраняем старое значение is_active для проверки
+            $oldIsActive = $service->is_active;
+
+            // Сохраняем старые привязки счетчиков
+            $oldMeterTypeIds = $service->meterTypes->pluck('id')->toArray();
+
+            // Обновляем услугу
             $service->update($validated);
 
-            if (($validated['calculation_type'] ?? null) !== $originalData['calculation_type']) {
-                // Находим текущий активный тариф
+            // Обновляем привязки типов счетчиков (только для услуг по счетчику)
+            if (isset($validated['meter_type_ids']) && $service->calculation_type === 'meter') {
+                $service->meterTypes()->sync($validated['meter_type_ids']);
+                $newMeterTypeIds = $validated['meter_type_ids'];
+            } else {
+                $service->meterTypes()->sync([]);
+                $newMeterTypeIds = [];
+            }
+
+            // Логика активации/деактивации счетчиков
+            if ($oldIsActive && !$service->is_active) {
+                // Деактивируем все счетчики, связанные с услугой
+                $meterTypeIds = array_unique(array_merge($oldMeterTypeIds, $newMeterTypeIds));
+                if (!empty($meterTypeIds)) {
+                    Meter::whereIn('type_id', $meterTypeIds)->update(['is_active' => false]);
+                }
+            } elseif (!$oldIsActive && $service->is_active) {
+                // Активируем счетчики только новых привязанных типов
+                if (!empty($newMeterTypeIds)) {
+                    Meter::whereIn('type_id', $newMeterTypeIds)->update(['is_active' => true]);
+                }
+            }
+            // Если услуга активна и изменились привязки счетчиков
+            elseif ($service->is_active && $oldMeterTypeIds != $newMeterTypeIds) {
+                // Деактивируем счетчики старых типов, которых больше нет в привязках
+                $typesToDeactivate = array_diff($oldMeterTypeIds, $newMeterTypeIds);
+                if (!empty($typesToDeactivate)) {
+                    Meter::whereIn('type_id', $typesToDeactivate)->update(['is_active' => false]);
+                }
+
+                // Активируем счетчики новых типов
+                if (!empty($newMeterTypeIds)) {
+                    Meter::whereIn('type_id', $newMeterTypeIds)->update(['is_active' => true]);
+                }
+            }
+
+            // Логика создания нового тарифа
+            if ($shouldCreateNewTariff) {
                 $activeTariff = Tariff::where('service_id', $service->id)
                     ->where(function ($query) {
                         $query->whereNull('end_date')
@@ -93,10 +170,8 @@ class ServiceController extends Controller
                     ->first();
 
                 if ($activeTariff) {
-                    // Закрываем старый тариф вчерашним днем
                     $activeTariff->update(['end_date' => Carbon::yesterday()]);
 
-                    // Создаем новый тариф с обновленной единицей, начиная с сегодняшнего дня
                     Tariff::create([
                         'service_id' => $service->id,
                         'rate' => $activeTariff->rate,
@@ -108,7 +183,10 @@ class ServiceController extends Controller
             }
         });
 
-        return response()->noContent(201);
+        // Загружаем обновленные отношения
+        $service->load(['meterTypes', 'tariffs']);
+
+        return new ServiceResource($service);
     }
 
     /**
@@ -117,11 +195,17 @@ class ServiceController extends Controller
     public function destroy(Service $service)
     {
         Log::debug('ServiceController destroy', ['Service' => $service]);
-        // Удаляем все связанные тарифы
-        $service->tariffs()->delete();
 
-        // Удаляем саму услугу
-        $service->delete();
+        DB::transaction(function () use ($service) {
+            // Удаляем все связанные тарифы
+            $service->tariffs()->delete();
+
+            // Удаляем связи с типами счетчиков
+            $service->meterTypes()->detach();
+
+            // Удаляем саму услугу
+            $service->delete();
+        });
 
         return response()->noContent(204);
     }
@@ -131,45 +215,51 @@ class ServiceController extends Controller
      */
     public function toggleActive(Service $service)
     {
-        $service->update(['is_active' => !$service->is_active]);
-        return response()->noContent(201);
+        $newStatus = !$service->is_active;
+
+        DB::transaction(function () use ($service, $newStatus) {
+            $service->update(['is_active' => $newStatus]);
+
+            // Обновляем статус связанных счетчиков
+            if ($service->calculation_type === 'meter') {
+                $meterTypeIds = $service->meterTypes->pluck('id')->toArray();
+                if (!empty($meterTypeIds)) {
+                    Meter::whereIn('type_id', $meterTypeIds)->update(['is_active' => $newStatus]);
+                }
+            }
+        });
+
+        // Загружаем обновленные отношения
+        $service->load(['meterTypes', 'tariffs']);
+
+        return new ServiceResource($service);
     }
 
+    /**
+     * Получить активные услуги (публичный метод)
+     */
     public function show(Request $request)
     {
-
         try {
             // Получаем все активные услуги с их текущими тарифами
-            $services = Service::active()
+            $services = Service::where('is_active', true)
                 ->with(['tariffs' => function ($query) {
-                    $query->current();
-                }])
+                    $query->where(function ($q) {
+                        $q->whereNull('end_date')
+                            ->orWhere('end_date', '>', now());
+                    });
+                }, 'meterTypes'])
                 ->get();
 
+            // Используем Resource для форматирования
+            $formattedServices = ServiceResource::collection($services);
 
-            // Форматируем данные для ответа
-            $formattedServices = $services->map(function ($service) {
-                return [
-                    'id' => $service->id,
-                    'name' => $service->name,
-                    'type' => $service->type,
-                    'is_active' => $service->is_active,
-                    'current_tariff' => $service->tariffs->first() ? [
-                        'id' => $service->tariffs->first()->id,
-                        'rate' => $service->tariffs->first()->rate,
-                        'unit' => $service->tariffs->first()->unit,
-                        'start_date' => $service->tariffs->first()->start_date->format('Y-m-d'),
-                    ] : null,
-                ];
-            });
-
-            Log::debug('ServiceController show', ['Service' => $formattedServices]);
+            Log::debug('ServiceController show', ['services' => $formattedServices]);
 
             return response()->json([
                 'success' => true,
                 'data' => $formattedServices
             ]);
-
         } catch (\Exception $e) {
             Log::error('ServiceController show error: ' . $e->getMessage());
             return response()->json([

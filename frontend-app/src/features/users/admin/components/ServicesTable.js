@@ -1,5 +1,5 @@
 import React from "react";
-import { Button, Typography, Chip, Switch } from "@mui/material";
+import { Button, Typography, Chip, Switch, Box, Tooltip } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 
 const ServicesTable = ({ services, onAdd, onEdit, onDelete, onToggle }) => {
@@ -57,10 +57,10 @@ const ServicesTable = ({ services, onAdd, onEdit, onDelete, onToggle }) => {
         {
             field: "calculation_type",
             headerName: "Тип расчёта",
-            width: 150,
+            width: 180,
             renderCell: (params) => {
                 const typeLabels = {
-                    fixed: { label: "Фикированный", color: "primary" },
+                    fixed: { label: "Фиксированный", color: "primary" },
                     meter: { label: "По счетчику", color: "secondary" },
                     area: { label: "По площади", color: "info" },
                 };
@@ -70,7 +70,72 @@ const ServicesTable = ({ services, onAdd, onEdit, onDelete, onToggle }) => {
                     color: "default",
                 };
 
-                return <Chip label={typeInfo.label} color={typeInfo.color} />;
+                // Если тип расчета не "meter", просто возвращаем чип без тултипа
+                if (params.value !== "meter") {
+                    return (
+                        <Chip label={typeInfo.label} color={typeInfo.color} />
+                    );
+                }
+
+                // Для типа "meter" формируем тултип с типами счетчиков
+                const meterTypes = params.row.meter_types || [];
+
+                if (meterTypes.length === 0) {
+                    return (
+                        <Tooltip title="Не назначены типы счетчиков">
+                            <Chip
+                                label={typeInfo.label}
+                                color={typeInfo.color}
+                                variant="outlined"
+                            />
+                        </Tooltip>
+                    );
+                }
+
+                // Формируем содержимое тултипа
+                const tooltipContent = (
+                    <Box sx={{ p: 0.5 }}>
+                        <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                            Используемые счетчики:
+                        </Typography>
+                        <Box
+                            sx={{
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: 0.5,
+                            }}
+                        >
+                            {meterTypes.map((type) => (
+                                <Chip
+                                    key={type.id}
+                                    label={`${type.name} (${type.unit})`}
+                                    size="small"
+                                    variant="outlined"
+                                    sx={{ justifyContent: "flex-start" }}
+                                />
+                            ))}
+                        </Box>
+                    </Box>
+                );
+
+                return (
+                    <Tooltip
+                        title={tooltipContent}
+                        placement="top"
+                        arrow
+                        enterDelay={500}
+                        leaveDelay={200}
+                    >
+                        <Chip
+                            label={`${typeInfo.label} (${meterTypes.length})`}
+                            color={typeInfo.color}
+                            sx={{
+                                cursor: "pointer",
+                                maxWidth: "100%",
+                            }}
+                        />
+                    </Tooltip>
+                );
             },
         },
         {

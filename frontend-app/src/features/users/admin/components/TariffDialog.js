@@ -21,6 +21,8 @@ const TariffDialog = ({
     apartments,
 }) => {
     const [rateValue, setRateValue] = useState(currentTariff?.rate || "");
+    const [startDate, setStartDate] = useState("");
+    const [endDate, setEndDate] = useState("");
     const [openCalculator, setOpenCalculator] = useState(false);
 
     // Находим объект услуги по ID
@@ -33,23 +35,22 @@ const TariffDialog = ({
     // Обновляем состояния при изменении currentTariff
     useEffect(() => {
         setRateValue(currentTariff?.rate || "");
+
+        // Форматируем даты для полей ввода
+        if (currentTariff?.start_date) {
+            setStartDate(
+                format(new Date(currentTariff.start_date), "yyyy-MM-dd")
+            );
+        } else {
+            setStartDate(format(new Date(), "yyyy-MM-dd"));
+        }
+
+        if (currentTariff?.end_date) {
+            setEndDate(format(new Date(currentTariff.end_date), "yyyy-MM-dd"));
+        } else {
+            setEndDate("");
+        }
     }, [currentTariff]);
-
-    // // Обработчик отправки формы
-    // const handleSubmit = (e) => {
-    //     e.preventDefault();
-    //     const formData = new FormData(e.target);
-    //     const data = Object.fromEntries(formData.entries());
-
-    //     // Используем актуальные значения из состояния
-    //     data.rate = rateValue;
-    //     // data.service_id = selectedService;
-
-    //     // Преобразование пустых строк в null
-    //     if (data.end_date === "") data.end_date = null;
-
-    //     onSubmit(data);
-    // };
 
     // Обработчик применения рассчитанного тарифа
     const handleApplyCalculatedTariff = (rate) => {
@@ -60,7 +61,9 @@ const TariffDialog = ({
     return (
         <>
             <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-                <DialogTitle>Редактирование тарифа</DialogTitle>
+                <DialogTitle>
+                    {currentTariff ? "Редактирование тарифа" : "Новый тариф"}
+                </DialogTitle>
                 <DialogContent>
                     <form onSubmit={onSubmit} id="tariff-form">
                         <Box sx={{ mt: 1, mb: 1 }}>
@@ -85,14 +88,8 @@ const TariffDialog = ({
                             name="start_date"
                             label="Дата начала"
                             type="date"
-                            value={
-                                currentTariff?.start_date
-                                    ? format(
-                                          new Date(currentTariff.start_date),
-                                          "yyyy-MM-dd"
-                                      )
-                                    : format(new Date(), "yyyy-MM-dd")
-                            }
+                            value={startDate}
+                            onChange={(e) => setStartDate(e.target.value)}
                             fullWidth
                             margin="normal"
                             required
@@ -103,14 +100,8 @@ const TariffDialog = ({
                             name="end_date"
                             label="Дата окончания (необязательно)"
                             type="date"
-                            value={
-                                currentTariff?.end_date
-                                    ? format(
-                                          new Date(currentTariff.end_date),
-                                          "yyyy-MM-dd"
-                                      )
-                                    : ""
-                            }
+                            value={endDate}
+                            onChange={(e) => setEndDate(e.target.value)}
                             fullWidth
                             margin="normal"
                             InputLabelProps={{ shrink: true }}
@@ -121,8 +112,7 @@ const TariffDialog = ({
                     <Box>
                         {canCalculate && (
                             <Button
-                                type="submit"
-                                variant="contained"
+                                variant="outlined"
                                 onClick={() => setOpenCalculator(true)}
                             >
                                 Рассчитать тариф

@@ -20,6 +20,7 @@ class Service extends Model
         'calculation_type',
         'is_active'
     ];
+    
 
     /**
      * The attributes that should be cast.
@@ -79,4 +80,17 @@ class Service extends Model
     {
         return $this->calculation_type === 'area';
     }
+
+    // Отношение многие ко многим с типами счетчиков
+    public function meterTypes()
+    {
+        return $this->belongsToMany(MeterType::class, 'service_meter_types')
+        ->withTimestamps();
+    }
+
+    // // Хелпер-метод для проверки типа расчета
+    // public function isMeterBased()
+    // {
+    //     return $this->calculation_type === 'meter';
+    // }
 }

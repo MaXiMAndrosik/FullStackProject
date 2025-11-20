@@ -21,6 +21,7 @@ class DatabaseSeeder extends Seeder
             ServiceAssignmentSeeder::class,
             TariffSeeder::class,
             MeterTypeSeeder::class,
+            ServiceMeterTypeSeeder::class,
             MeterSeeder::class,
             MeterReadingSeeder::class,
         ]);

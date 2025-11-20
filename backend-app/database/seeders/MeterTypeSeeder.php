@@ -34,6 +34,11 @@ class MeterTypeSeeder extends Seeder
                 'name' => 'Отопление',
                 'unit' => 'gcal',
                 'description' => 'Теплосчетчик'
+            ],
+            [
+                'name' => 'Подогрев воды',
+                'unit' => 'gcal',
+                'description' => 'Теплосчетчик'
             ]
         ];
 
