@@ -28,37 +28,37 @@ class ServiceResource extends JsonResource
             'updated_at' => $this->updated_at,
         ];
     }
+
     private function getCurrentTariff()
     {
         try {
-            // Проверяем, загружены ли тарифы
             if (!$this->relationLoaded('tariffs') || $this->tariffs->isEmpty()) {
-                return 'Не установлен';
+                return null;
             }
 
-            // Находим текущий тариф (без end_date или с end_date в будущем)
             $currentTariff = $this->tariffs->first(function ($tariff) {
                 return $tariff->end_date === null ||
                     Carbon::parse($tariff->end_date)->isFuture();
             });
 
-            // Если не нашли текущий, берем последний по дате начала
             if (!$currentTariff) {
                 $currentTariff = $this->tariffs->sortByDesc('start_date')->first();
             }
 
             if (!$currentTariff) {
-                return 'Не установлен';
+                return null;
             }
 
-            $rate = number_format($currentTariff->rate, 2);
-            $unitLabel = $this->getUnitLabel($currentTariff->unit);
-
-            return "{$rate} {$unitLabel}";
+            // Вместо строки возвращаем объект с нужными полями
+            return [
+                'start_date' => $currentTariff->start_date,
+                'rate' => (float) $currentTariff->rate,
+                'unit' => $currentTariff->unit,
+                'formatted_rate' => number_format($currentTariff->rate, 2) . ' ' . $this->getUnitLabel($currentTariff->unit)
+            ];
         } catch (\Exception $e) {
-            // Логируем ошибку для отладки
             Log::error('Error in getCurrentTariff: ' . $e->getMessage());
-            return 'Ошибка';
+            return null;
         }
     }
 

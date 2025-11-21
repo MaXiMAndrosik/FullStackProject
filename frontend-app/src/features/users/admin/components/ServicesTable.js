@@ -2,7 +2,15 @@ import React from "react";
 import { Button, Typography, Chip, Switch, Box, Tooltip } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 
-const ServicesTable = ({ services, onAdd, onEdit, onDelete, onToggle }) => {
+const ServicesTable = ({
+    services,
+    onAdd,
+    onEdit,
+    onDelete,
+    onToggle,
+    onManageMeters,
+    meterTypes,
+}) => {
     const columnsServices = [
         {
             field: "id",
@@ -49,11 +57,11 @@ const ServicesTable = ({ services, onAdd, onEdit, onDelete, onToggle }) => {
             flex: 1,
             minWidth: 200,
         },
-        {
-            field: "code",
-            headerName: "Код",
-            width: 120,
-        },
+        // {
+        //     field: "code",
+        //     headerName: "Код",
+        //     width: 120,
+        // },
         {
             field: "calculation_type",
             headerName: "Тип расчёта",
@@ -70,14 +78,14 @@ const ServicesTable = ({ services, onAdd, onEdit, onDelete, onToggle }) => {
                     color: "default",
                 };
 
-                // Если тип расчета не "meter", просто возвращаем чип без тултипа
+                // Если тип расчета не "meter", просто возвращаем чип
                 if (params.value !== "meter") {
                     return (
                         <Chip label={typeInfo.label} color={typeInfo.color} />
                     );
                 }
 
-                // Для типа "meter" формируем тултип с типами счетчиков
+                // Для типа "meter" показываем связанные счетчики
                 const meterTypes = params.row.meter_types || [];
 
                 if (meterTypes.length === 0) {
@@ -85,7 +93,7 @@ const ServicesTable = ({ services, onAdd, onEdit, onDelete, onToggle }) => {
                         <Tooltip title="Не назначены типы счетчиков">
                             <Chip
                                 label={typeInfo.label}
-                                color={typeInfo.color}
+                                color="error"
                                 variant="outlined"
                             />
                         </Tooltip>
@@ -96,7 +104,7 @@ const ServicesTable = ({ services, onAdd, onEdit, onDelete, onToggle }) => {
                 const tooltipContent = (
                     <Box sx={{ p: 0.5 }}>
                         <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                            Используемые счетчики:
+                            Привязанные счетчики:
                         </Typography>
                         <Box
                             sx={{
@@ -157,7 +165,7 @@ const ServicesTable = ({ services, onAdd, onEdit, onDelete, onToggle }) => {
         {
             field: "actions",
             headerName: "Действия",
-            width: 200,
+            width: 250,
             renderCell: (params) => (
                 <div>
                     <Button size="small" onClick={() => onEdit(params.row)}>

@@ -48,7 +48,6 @@ const OwnerServicesPage = () => {
             });
     };
 
-    // Загрузка сервисов с тарифами
     const fetchAssignmentsServices = () => {
         setLoading(true);
         apiClient
@@ -68,33 +67,11 @@ const OwnerServicesPage = () => {
         return dateString ? format(new Date(dateString), "dd.MM.yyyy") : "";
     };
 
-    // Получение текущего активного тарифа
-    const getCurrentTariff = (tariffs) => {
-        if (!tariffs) return null;
-
-        const today = new Date();
-        const startDate = new Date(tariffs.start_date);
-        const endDate = tariffs.end_date ? new Date(tariffs.end_date) : null;
-
-        // Проверяем, активен ли тариф на текущую дату
-        if (startDate <= today && (!endDate || endDate >= today)) {
-            return {
-                start_date: tariffs.start_date,
-                rate: formatRate(tariffs.rate),
-                unit: tariffs.unit,
-            };
-        }
-
-        return null;
-    };
-
     // Функция для форматирования числа с удалением незначащих нулей
     const formatRate = (value) => {
-        // Округляем до 4 знаков и удаляем незначащие нули
         const formatted = parseFloat(value)
             .toFixed(4)
             .replace(/\.?0+$/, "");
-        // Если число целое - добавляем .0 для указания на десятичную дробь
         return formatted.includes(".") ? formatted : `${formatted}.0`;
     };
 
@@ -218,9 +195,7 @@ const OwnerServicesPage = () => {
                         }}
                     >
                         {allServices.map((service) => {
-                            const currentTariff = getCurrentTariff(
-                                service.current_tariff
-                            );
+                            const currentTariff = service.current_tariff;
                             const typeInfo = typeLabels[service.type] || {
                                 label: service.type,
                                 color: "default",
@@ -286,7 +261,7 @@ const OwnerServicesPage = () => {
                                                 variant="h6"
                                                 fontWeight="bold"
                                             >
-                                                {currentTariff.rate}
+                                                {formatRate(currentTariff.rate)}
                                             </Typography>
                                             <Typography
                                                 variant="body2"
@@ -336,9 +311,8 @@ const OwnerServicesPage = () => {
                             </TableHead>
                             <TableBody>
                                 {allServices.map((service) => {
-                                    const currentTariff = getCurrentTariff(
-                                        service.current_tariff
-                                    );
+                                    const currentTariff =
+                                        service.current_tariff;
                                     const typeInfo = typeLabels[
                                         service.type
                                     ] || {
@@ -375,7 +349,9 @@ const OwnerServicesPage = () => {
                                                 {currentTariff ? (
                                                     <>
                                                         <Typography fontWeight="bold">
-                                                            {currentTariff.rate}{" "}
+                                                            {formatRate(
+                                                                currentTariff.rate
+                                                            )}{" "}
                                                             {unitLabels[
                                                                 currentTariff
                                                                     .unit

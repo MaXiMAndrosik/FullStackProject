@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Service;
 use App\Models\Tariff;
 use App\Models\Meter;
+use App\Models\MeterType;
 use App\Http\Resources\ServiceResource;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -36,7 +37,6 @@ class ServiceController extends Controller
             'type' => 'required|string|max:20',
             'description' => 'nullable|string',
             'calculation_type' => ['required', Rule::in(['fixed', 'meter', 'area'])],
-            'unit' => 'required_if:calculation_type,meter|string|max:100',
             'meter_type_ids' => 'required_if:calculation_type,meter|array',
             'meter_type_ids.*' => 'exists:meter_types,id',
             'is_active' => 'sometimes|boolean'
@@ -57,11 +57,14 @@ class ServiceController extends Controller
                 }
             }
 
+            // Определяем правильный unit в зависимости от типа расчета
+            $unit = $this->getUnitForService($service->calculation_type, $validated['meter_type_ids'] ?? []);
+
             // Создаем начальный тариф
             Tariff::create([
                 'service_id' => $service->id,
                 'rate' => 0.00,
-                'unit' => $validated['unit'] ?? 'fixed',
+                'unit' => $unit,
                 'start_date' => Carbon::today(),
                 'end_date' => null,
             ]);
@@ -72,6 +75,8 @@ class ServiceController extends Controller
         // Загружаем отношения для возврата
         $service->load(['meterTypes', 'tariffs']);
 
+        Log::debug('ServiceController store created', ['Service' => $service]);
+
         return new ServiceResource($service);
     }
 
@@ -80,8 +85,6 @@ class ServiceController extends Controller
      */
     public function update(Request $request, Service $service)
     {
-        Log::debug('ServiceController update', ['Service' => $service]);
-        Log::debug('ServiceController update', ['Request' => $request]);
 
         $originalData = $service->toArray();
 
@@ -91,7 +94,6 @@ class ServiceController extends Controller
             'type' => 'required|string|max:20',
             'description' => 'nullable|string',
             'calculation_type' => ['sometimes', Rule::in(['fixed', 'meter', 'area'])],
-            'unit' => 'sometimes|string|max:100',
             'meter_type_ids' => 'sometimes|array',
             'meter_type_ids.*' => 'exists:meter_types,id',
             'is_active' => 'sometimes|boolean'
@@ -101,17 +103,13 @@ class ServiceController extends Controller
             $shouldCreateNewTariff = false;
             $newUnit = null;
 
-            $originalUnit = $originalData['unit'] ?? null;
-
             // Проверяем, изменился ли calculation_type
             if (isset($validated['calculation_type']) && $validated['calculation_type'] !== $originalData['calculation_type']) {
                 $shouldCreateNewTariff = true;
-                $newUnit = $this->getDefaultUnit($validated['calculation_type']);
-            }
-            // Проверяем, изменился ли unit
-            else if (isset($validated['unit']) && $validated['unit'] !== $originalUnit) {
-                $shouldCreateNewTariff = true;
-                $newUnit = $validated['unit'];
+
+                // Определяем unit на основе нового типа расчета и привязанных счетчиков
+                $meterTypeIds = $validated['meter_type_ids'] ?? $service->meterTypes->pluck('id')->toArray();
+                $newUnit = $this->getUnitForService($validated['calculation_type'], $meterTypeIds);
             }
 
             // Сохраняем старое значение is_active для проверки
@@ -134,7 +132,7 @@ class ServiceController extends Controller
 
             // Логика активации/деактивации счетчиков
             if ($oldIsActive && !$service->is_active) {
-                // Деактивируем все счетчики, связанные с услугой
+                // Деактивируем все счетчики, связанные с услугами
                 $meterTypeIds = array_unique(array_merge($oldMeterTypeIds, $newMeterTypeIds));
                 if (!empty($meterTypeIds)) {
                     Meter::whereIn('type_id', $meterTypeIds)->update(['is_active' => false]);
@@ -270,11 +268,23 @@ class ServiceController extends Controller
         }
     }
 
-    protected function getDefaultUnit($calculationType): string
+    /**
+     * Получить unit для услуги на основе типа расчета и привязанных счетчиков
+     */
+    protected function getUnitForService($calculationType, array $meterTypeIds = []): string
     {
+        // Для услуг по счетчику берем unit из первого привязанного счетчика
+        if ($calculationType === 'meter' && !empty($meterTypeIds)) {
+            $firstMeterType = MeterType::find($meterTypeIds[0]);
+            if ($firstMeterType && $firstMeterType->unit) {
+                return $firstMeterType->unit;
+            }
+        }
+
+        // Для остальных случаев используем стандартные значения
         return match ($calculationType) {
             'fixed' => 'fixed',
-            'meter' => 'm3',
+            'meter' => 'm3', // Резервное значение, если счетчики не найдены
             'area' => 'm2',
             default => 'fixed',
         };

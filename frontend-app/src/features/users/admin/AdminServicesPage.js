@@ -134,7 +134,6 @@ const AdminServicesPage = () => {
 
         // Правильно обрабатываем meter_type_ids - разбиваем строку на массив чисел
         const meterTypeIdsValue = data.get("meter_type_ids");
-        console.log("meterTypeIds raw value:", meterTypeIdsValue);
 
         if (meterTypeIdsValue) {
             // Если это строка с запятыми, разбиваем на массив

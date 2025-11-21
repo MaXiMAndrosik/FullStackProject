@@ -56,7 +56,7 @@ class ServiceSeeder extends Seeder
         // Коммунальные услуги
         $publicUtilities = [
             [
-                'code' => 'cold_water',
+                'code' => 'water_supply',
                 'name' => 'Водоснабжение',
                 'description' => 'Бесперебойная подача воды.',
                 'type' => 'utility',
@@ -72,7 +72,7 @@ class ServiceSeeder extends Seeder
                 'is_active' => true,
             ],
             [
-                'code' => 'hot_water',
+                'code' => 'water_heating',
                 'name' => 'Горячее водоснабжение (подогрев воды)',
                 'description' => 'Обеспечение подачи горячей воды в жилые помещения круглосуточно в соответствии с установленными нормами качества и температуры',
                 'type' => 'utility',

@@ -3,6 +3,36 @@ import { Button, Typography, Tooltip, Box } from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 
 const TariffsTable = ({ tariffs, onEdit, onDelete }) => {
+    // Подготавливаем данные с дополнительным полем для фильтрации
+    const processedTariffs = tariffs.map((tariff) => {
+        const status = tariff.status;
+        const isServiceActive = tariff.service_is_active;
+
+        let statusText;
+        if (!isServiceActive) {
+            statusText = "Отключен";
+        } else {
+            switch (status) {
+                case "current":
+                    statusText = "Активен";
+                    break;
+                case "expired":
+                    statusText = "Устарел";
+                    break;
+                case "future":
+                    statusText = "Будущий";
+                    break;
+                default:
+                    statusText = "Неизвестно";
+            }
+        }
+
+        return {
+            ...tariff,
+            statusText,
+        };
+    });
+
     const columnsTariffs = [
         {
             field: "id",
@@ -38,44 +68,37 @@ const TariffsTable = ({ tariffs, onEdit, onDelete }) => {
             width: 150,
         },
         {
-            field: "status",
+            field: "statusText",
             headerName: "Статус",
             width: 120,
             sortable: true,
             renderCell: (params) => {
-                const status = params.value; // 'current', 'future', 'expired'
+                const statusText = params.value;
+                const status = params.row.status;
                 const isServiceActive = params.row.service_is_active;
-                console.log("status = ", status);
 
-                // Определяем цвет в зависимости от статуса тарифа и активности услуги
                 let color;
-                let statusText;
                 let tooltipText;
 
                 if (!isServiceActive) {
-                    color = "grey.500"; // Серый, если услуга неактивна
-                    statusText = "Отключен";
+                    color = "grey.500";
                     tooltipText = "Услуга отключена";
                 } else {
                     switch (status) {
                         case "current":
-                            color = "success.main"; // Зеленый для активного тарифа
-                            statusText = "Активен";
+                            color = "success.main";
                             tooltipText = "Активный тариф";
                             break;
                         case "expired":
-                            color = "error.main"; // Красный для устаревшего тарифа
-                            statusText = "Устарел";
+                            color = "error.main";
                             tooltipText = "Тариф устарел";
                             break;
                         case "future":
-                            color = "info.main"; // Синий для будущего тарифа
-                            statusText = "Будущий";
+                            color = "info.main";
                             tooltipText = "Тариф еще не вступил в силу";
                             break;
                         default:
                             color = "grey.500";
-                            statusText = "Неизв.";
                             tooltipText = "Неизвестный статус";
                     }
                 }
@@ -84,8 +107,11 @@ const TariffsTable = ({ tariffs, onEdit, onDelete }) => {
                     <Tooltip title={tooltipText}>
                         <Box
                             sx={{
+                                width: "100%",
+                                height: "100%",
                                 display: "flex",
                                 alignItems: "center",
+                                justifyContent: "flex-start",
                                 gap: 1,
                             }}
                         >
@@ -151,7 +177,7 @@ const TariffsTable = ({ tariffs, onEdit, onDelete }) => {
                 </Typography>
             </Typography>
             <DataGrid
-                rows={tariffs}
+                rows={processedTariffs}
                 columns={columnsTariffs}
                 pageSizeOptions={[10, 20, 50]}
                 initialState={{
@@ -159,6 +185,11 @@ const TariffsTable = ({ tariffs, onEdit, onDelete }) => {
                 }}
                 disableColumnResize
                 density="compact"
+                slotProps={{
+                    toolbar: {
+                        showQuickFilter: true,
+                    },
+                }}
             />
         </>
     );

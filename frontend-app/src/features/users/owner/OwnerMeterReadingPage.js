@@ -15,7 +15,7 @@ const OwnerMeterReadingPage = () => {
     useEffect(() => {
         fetchReadings();
         fetchServices();
-    }, [fetchReadings]);
+    }, []);
 
     const fetchReadings = async () => {
         setLoading(true);

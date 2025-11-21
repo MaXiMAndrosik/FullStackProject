@@ -11,9 +11,10 @@ class MeterTypeResource extends JsonResource
         return [
             'id' => $this->id,
             'name' => $this->name,
+            'code' => $this->code,
             'unit' => $this->unit,
             'description' => $this->description,
-            'is_active' => $this->is_active,
+            'is_active' => $this->is_active ?? true,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

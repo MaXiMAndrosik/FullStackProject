@@ -22,9 +22,9 @@ class TariffSeeder extends Seeder
             'technical_maintenance' => 'm2',
             'technical_elevator' => 'm2',
             'sanitary_maintenance' => 'fixed',
-            'cold_water' => 'm3',
+            'water_supply' => 'm3',
             'water_disposal' => 'm3',
-            'hot_water' => 'gcal',
+            'water_heating' => 'gcal',
             'heating' => 'gcal',
             'electricity' => 'kwh',
             'gas' => 'm3',
@@ -41,10 +41,10 @@ class TariffSeeder extends Seeder
                 'technical_maintenance' => 0.1932,
                 'technical_elevator' => 0.0902,
                 'sanitary_maintenance' => 5.8000,
-                'cold_water' => 1.8793,
+                'water_supply' => 1.8793,
                 'water_disposal' => 1.6267,
-                'hot_water' => 24.7183,
-                'heating' => 24.7183,
+                'water_heating' => 24.2323,
+                'heating' => 24.2323,
                 'electricity' => 0.2969,
                 'gas' => 0.2062,
                 'waste' => 15.3776,
@@ -67,7 +67,7 @@ class TariffSeeder extends Seeder
             $tariffCount++;
 
             // Для некоторых услуг добавим историю тарифов
-            if (in_array($service->code, ['cold_water', 'electricity', 'water_disposal', 'electricity'])) {
+            if (in_array($service->code, ['water_supply', 'electricity', 'water_disposal', 'electricity'])) {
                 Tariff::create([
                     'service_id' => $service->id,
                     'rate' => $rate * 0.9, // -10%
