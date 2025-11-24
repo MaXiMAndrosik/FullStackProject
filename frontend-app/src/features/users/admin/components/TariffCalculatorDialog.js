@@ -10,9 +10,11 @@ import {
     Grid,
     CircularProgress,
     Alert,
+    MenuItem, // Добавляем MenuItem
 } from "@mui/material";
 import StyledTextArea from "../../../../shared/ui/StyledTextArea";
 import { showError } from "../../../../shared/services/notificationService";
+import { format, addMonths, endOfMonth } from "date-fns"; // Добавляем функции date-fns
 
 const TariffCalculatorDialog = ({
     open,
@@ -20,12 +22,27 @@ const TariffCalculatorDialog = ({
     service,
     apartments,
     onSubmit,
+    initialStartDate = "",
 }) => {
     const [totalCost, setTotalCost] = useState("");
     const [consumption, setConsumption] = useState("");
     const [calculatedTariff, setCalculatedTariff] = useState(null);
     const [validationResult, setValidationResult] = useState(null);
     const [loading, setLoading] = useState(false);
+
+    // Добавляем состояния для рассрочки
+    const [installmentOption, setInstallmentOption] = useState("off");
+    const [installmentMonths, setInstallmentMonths] = useState(1);
+    const [startDate, setStartDate] = useState(
+        initialStartDate || format(new Date(), "yyyy-MM-dd")
+    );
+
+    // Обновляем startDate при изменении initialStartDate
+    useEffect(() => {
+        if (initialStartDate) {
+            setStartDate(initialStartDate);
+        }
+    }, [initialStartDate]);
 
     // Сброс состояния при открытии/закрытии диалога
     useEffect(() => {
@@ -35,6 +52,9 @@ const TariffCalculatorDialog = ({
             setCalculatedTariff(null);
             setValidationResult(null);
             setLoading(false);
+            // Сбрасываем рассрочку при открытии
+            setInstallmentOption("off");
+            setInstallmentMonths(1);
         }
     }, [open]);
 
@@ -52,6 +72,14 @@ const TariffCalculatorDialog = ({
     // Общая площадь дома
     const totalArea =
         service?.calculation_type === "area" ? calculateTotalArea() : "0.00";
+
+    // Функция для расчета даты окончания рассрочки
+    const calculateEndDate = () => {
+        if (installmentOption !== "on") return null;
+        const start = new Date(startDate);
+        const endDate = endOfMonth(addMonths(start, installmentMonths - 1));
+        return format(endDate, "yyyy-MM-dd");
+    };
 
     // Проверка рассчитанного тарифа
     const validateTariff = (tariff, baseValue, totalCost) => {
@@ -105,18 +133,70 @@ const TariffCalculatorDialog = ({
                 );
             }
 
-            const tariff = costValue / baseValue;
-            const tariffValue = tariff.toFixed(4);
+            let tariff, monthlyTariff, validation;
 
-            // Проверяем точность тарифа
-            const validation = validateTariff(
-                tariffValue,
-                baseValue,
-                totalCost
-            );
+            if (installmentOption === "on") {
+                // Расчет с рассрочкой
+                const months = parseInt(installmentMonths) || 1;
+                if (months < 1) {
+                    throw new Error(
+                        "Количество месяцев должно быть не меньше 1"
+                    );
+                }
+
+                // Общий тариф без рассрочки
+                tariff = costValue / baseValue;
+                // Месячный тариф с рассрочкой
+                monthlyTariff = tariff / months;
+
+                const formattedMonthlyTariff = parseFloat(
+                    monthlyTariff.toFixed(4)
+                );
+                const formattedTariff = parseFloat(tariff.toFixed(4));
+
+                // Проверка расчетов
+                const calculatedTotal =
+                    formattedMonthlyTariff * baseValue * months;
+                const difference = Math.abs(calculatedTotal - costValue);
+                const isExact = difference < 0.01;
+
+                validation = {
+                    type: "installment",
+                    totalCalculated: calculatedTotal,
+                    originalTotal: costValue,
+                    difference,
+                    isExact,
+                    months,
+                    monthlyTariff: formattedMonthlyTariff,
+                    baseTariff: formattedTariff,
+                };
+
+                setCalculatedTariff(formattedMonthlyTariff);
+            } else {
+                // Расчет без рассрочки
+                tariff = costValue / baseValue;
+                const tariffValue = tariff.toFixed(4);
+
+                // Проверяем точность тарифа
+                const calculatedTotal = parseFloat(
+                    (parseFloat(tariffValue) * baseValue).toFixed(2)
+                );
+                const difference = Math.abs(calculatedTotal - costValue);
+                const isExact = difference < 0.01;
+
+                validation = {
+                    type: "single",
+                    calculatedTotal,
+                    originalTotal: costValue,
+                    difference,
+                    isExact,
+                    formattedTariff: parseFloat(tariffValue),
+                };
+
+                setCalculatedTariff(parseFloat(tariffValue));
+            }
+
             setValidationResult(validation);
-
-            setCalculatedTariff(tariffValue);
         } catch (error) {
             showError(error.message);
         } finally {
@@ -126,8 +206,23 @@ const TariffCalculatorDialog = ({
 
     // Применение результата
     const applyTariff = () => {
-        if (calculatedTariff) {
-            onSubmit(calculatedTariff);
+        if (calculatedTariff !== null) {
+            if (installmentOption === "on") {
+                // Возвращаем объект с данными рассрочки
+                const months = parseInt(installmentMonths) || 1;
+                const endDate = calculateEndDate();
+
+                onSubmit({
+                    rate: calculatedTariff,
+                    start_date: startDate,
+                    end_date: endDate,
+                    is_installment: true,
+                    installment_months: months,
+                });
+            } else {
+                // Возвращаем просто число
+                onSubmit(calculatedTariff);
+            }
         }
     };
 
@@ -182,6 +277,17 @@ const TariffCalculatorDialog = ({
                 </Box>
 
                 <StyledTextArea
+                    label="Дата начала тарифа"
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    fullWidth
+                    margin="normal"
+                    required
+                    InputLabelProps={{ shrink: true }}
+                />
+
+                <StyledTextArea
                     label="Общая стоимость услуги для дома"
                     type="number"
                     value={totalCost}
@@ -203,6 +309,45 @@ const TariffCalculatorDialog = ({
                         required
                         inputProps={{ step: "0.01", min: "0.01" }}
                     />
+                )}
+
+                {/* Блок рассрочки */}
+                <StyledTextArea
+                    label="Рассрочка платежа"
+                    select
+                    value={installmentOption}
+                    onChange={(e) => setInstallmentOption(e.target.value)}
+                    fullWidth
+                    margin="normal"
+                >
+                    <MenuItem value="off">Рассрочка отключена</MenuItem>
+                    <MenuItem value="on">Рассрочка включена</MenuItem>
+                </StyledTextArea>
+
+                {installmentOption === "on" && (
+                    <>
+                        <StyledTextArea
+                            label="Количество месяцев"
+                            type="number"
+                            value={installmentMonths}
+                            onChange={(e) => {
+                                const value = parseInt(e.target.value);
+                                if (value >= 1) setInstallmentMonths(value);
+                            }}
+                            fullWidth
+                            margin="normal"
+                            required
+                            inputProps={{ min: 1 }}
+                        />
+                        <Typography
+                            variant="body2"
+                            color="textSecondary"
+                            sx={{ mt: 1, mb: 2 }}
+                        >
+                            Дата окончания будет автоматически установлена:{" "}
+                            {calculateEndDate()}
+                        </Typography>
+                    </>
                 )}
 
                 {loading ? (
@@ -243,39 +388,134 @@ const TariffCalculatorDialog = ({
                                     Результаты расчета:
                                 </Typography>
 
-                                <Typography variant="body1" gutterBottom>
-                                    <strong>Рассчитанный тариф:</strong>{" "}
-                                    {calculatedTariff} {getUnitLabel()}
-                                </Typography>
-
-                                <Typography variant="body1" gutterBottom>
-                                    <strong>Порядок расчета:</strong> Общая
-                                    стоимость /{" "}
-                                    {service?.calculation_type === "area"
-                                        ? "Общая площадь дома"
-                                        : "Общее потребление"}{" "}
-                                    = {totalCost} /{" "}
-                                    {service?.calculation_type === "area"
-                                        ? totalArea
-                                        : consumption}{" "}
-                                    = {calculatedTariff}
-                                </Typography>
-
-                                <Typography variant="body1" gutterBottom>
-                                    <strong>Проверка:</strong> Тариф ×{" "}
-                                    {service?.calculation_type === "area"
-                                        ? "Общая площадь дома"
-                                        : "Общее потребление"}{" "}
-                                    = {calculatedTariff} ×{" "}
-                                    {service?.calculation_type === "area"
-                                        ? totalArea
-                                        : consumption}{" "}
-                                    ={" "}
-                                    {validationResult.calculatedTotal?.toFixed(
-                                        2
-                                    ) || "0.00"}{" "}
-                                    руб
-                                </Typography>
+                                {validationResult.type === "single" ? (
+                                    // Без рассрочки
+                                    <>
+                                        <Typography
+                                            variant="body1"
+                                            gutterBottom
+                                        >
+                                            <strong>Рассчитанный тариф:</strong>{" "}
+                                            {calculatedTariff} {getUnitLabel()}
+                                        </Typography>
+                                        <Typography
+                                            variant="body1"
+                                            gutterBottom
+                                        >
+                                            <strong>Порядок расчета:</strong>{" "}
+                                            Общая стоимость /{" "}
+                                            {service?.calculation_type ===
+                                            "area"
+                                                ? "Общая площадь дома"
+                                                : "Общее потребление"}{" "}
+                                            = {totalCost} /{" "}
+                                            {service?.calculation_type ===
+                                            "area"
+                                                ? totalArea
+                                                : consumption}{" "}
+                                            = {calculatedTariff}
+                                        </Typography>
+                                        <Typography
+                                            variant="body1"
+                                            gutterBottom
+                                        >
+                                            <strong>Проверка:</strong> Тариф ×{" "}
+                                            {service?.calculation_type ===
+                                            "area"
+                                                ? "Общая площадь дома"
+                                                : "Общее потребление"}{" "}
+                                            = {calculatedTariff} ×{" "}
+                                            {service?.calculation_type ===
+                                            "area"
+                                                ? totalArea
+                                                : consumption}{" "}
+                                            ={" "}
+                                            {validationResult.calculatedTotal?.toFixed(
+                                                2
+                                            ) || "0.00"}{" "}
+                                            руб
+                                        </Typography>
+                                    </>
+                                ) : (
+                                    // С рассрочкой
+                                    <>
+                                        <Typography
+                                            variant="body1"
+                                            gutterBottom
+                                        >
+                                            <strong>
+                                                Рассчитанный тариф в месяц:
+                                            </strong>{" "}
+                                            {calculatedTariff} {getUnitLabel()}
+                                        </Typography>
+                                        <Typography
+                                            variant="body1"
+                                            gutterBottom
+                                        >
+                                            <strong>Дата начала:</strong>{" "}
+                                            {startDate}
+                                        </Typography>
+                                        <Typography
+                                            variant="body1"
+                                            gutterBottom
+                                        >
+                                            <strong>Дата окончания:</strong>{" "}
+                                            {calculateEndDate()}
+                                        </Typography>
+                                        <Typography
+                                            variant="body1"
+                                            gutterBottom
+                                        >
+                                            <strong>
+                                                Общий тариф без рассрочки:
+                                            </strong>{" "}
+                                            {validationResult.baseTariff?.toFixed(
+                                                4
+                                            )}{" "}
+                                            {getUnitLabel()}
+                                        </Typography>
+                                        <Typography
+                                            variant="body1"
+                                            gutterBottom
+                                        >
+                                            <strong>Порядок расчета:</strong>{" "}
+                                            (Общая стоимость /{" "}
+                                            {service?.calculation_type ===
+                                            "area"
+                                                ? "Общая площадь дома"
+                                                : "Общее потребление"}{" "}
+                                            ) / {validationResult.months}{" "}
+                                            месяцев = ({totalCost} /{" "}
+                                            {service?.calculation_type ===
+                                            "area"
+                                                ? totalArea
+                                                : consumption}{" "}
+                                            ) / {validationResult.months} ={" "}
+                                            {calculatedTariff}
+                                        </Typography>
+                                        <Typography
+                                            variant="body1"
+                                            gutterBottom
+                                        >
+                                            <strong>Проверка:</strong> Тариф ×{" "}
+                                            {service?.calculation_type ===
+                                            "area"
+                                                ? "Общая площадь дома"
+                                                : "Общее потребление"}{" "}
+                                            × {validationResult.months} месяцев
+                                            = {calculatedTariff} ×{" "}
+                                            {service?.calculation_type ===
+                                            "area"
+                                                ? totalArea
+                                                : consumption}{" "}
+                                            × {validationResult.months} ={" "}
+                                            {validationResult.totalCalculated?.toFixed(
+                                                2
+                                            ) || "0.00"}{" "}
+                                            руб
+                                        </Typography>
+                                    </>
+                                )}
 
                                 {validationResult.isExact ? (
                                     <Alert severity="success" sx={{ mt: 2 }}>

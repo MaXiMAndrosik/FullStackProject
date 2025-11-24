@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Carbon\Carbon;
 
 class AssignmentTariff extends Model
 {
@@ -15,25 +16,42 @@ class AssignmentTariff extends Model
         'end_date'
     ];
 
+    protected $casts = [
+        'start_date' => 'date:Y-m-d',
+        'end_date' => 'date:Y-m-d',
+    ];
+
     /**
      * Получить услугу, к которой относится тариф.
      */
-    public function service(): BelongsTo
-    {
-        return $this->belongsTo(ServiceAssignment::class);
-    }
-
     public function assignment(): BelongsTo
     {
         return $this->belongsTo(ServiceAssignment::class);
     }
 
-    public function scopeActive($query)
+    /**
+     * Проверить, является ли тариф активным
+     */
+    public function isActive(): bool
     {
-        return $query->where('start_date', '<=', now())
-            ->where(function ($q) {
-                $q->where('end_date', '>=', now())
-                    ->orWhereNull('end_date');
-            });
+        $today = Carbon::today();
+        return $this->start_date <= $today &&
+            (!$this->end_date || $this->end_date >= $today);
+    }
+
+    /**
+     * Проверить, является ли тариф будущим
+     */
+    public function isFuture(): bool
+    {
+        return $this->start_date > Carbon::today();
+    }
+
+    /**
+     * Проверить, является ли тариф устаревшим
+     */
+    public function isExpired(): bool
+    {
+        return $this->end_date && $this->end_date < Carbon::today();
     }
 }

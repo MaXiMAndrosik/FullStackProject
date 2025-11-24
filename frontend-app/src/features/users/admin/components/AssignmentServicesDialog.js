@@ -14,7 +14,6 @@ import {
     Typography,
 } from "@mui/material";
 import StyledTextArea from "../../../../shared/ui/StyledTextArea";
-import StyledFormControl from "../../../../shared/ui/StyledFormControl";
 
 const AssignmentDialog = ({
     open,
@@ -76,94 +75,96 @@ const AssignmentDialog = ({
 
                     {/* Тип привязки - только для создания */}
                     {!currentAssignment && (
-                        <StyledFormControl fullWidth margin="normal" required>
-                            <InputLabel>Тип привязки</InputLabel>
-                            <Select
-                                name="scope"
-                                defaultValue="apartment"
-                                label="Тип привязки"
-                                required
-                                onChange={(e) => {
-                                    setAssignmentScope(e.target.value);
-                                    if (e.target.value === "entrance") {
-                                        setSelectedApartments([]);
-                                    } else {
-                                        setSelectedEntrances([]);
-                                    }
-                                }}
-                            >
-                                <MenuItem value="apartment">
-                                    К отдельным квартирам
-                                </MenuItem>
-                                <MenuItem value="entrance">
-                                    К подъездам
-                                </MenuItem>
-                            </Select>
-                        </StyledFormControl>
+                        <StyledTextArea
+                            name="scope"
+                            label="Тип привязки"
+                            select
+                            defaultValue="apartment"
+                            fullWidth
+                            margin="normal"
+                            required
+                            onChange={(e) => {
+                                setAssignmentScope(e.target.value);
+                                if (e.target.value === "entrance") {
+                                    setSelectedApartments([]);
+                                } else {
+                                    setSelectedEntrances([]);
+                                }
+                            }}
+                        >
+                            <MenuItem value="apartment">
+                                К отдельным квартирам
+                            </MenuItem>
+                            <MenuItem value="entrance">К подъездам</MenuItem>
+                        </StyledTextArea>
                     )}
 
                     {/* Выбор объектов - только для создания */}
                     {!currentAssignment && assignmentScope === "entrance" && (
-                        <StyledFormControl fullWidth margin="normal" required>
-                            <InputLabel>Подъезды</InputLabel>
-                            <Select
-                                multiple
-                                value={selectedEntrances}
-                                onChange={handleEntrancesChange}
-                                label="Подъезды"
-                                renderValue={(selected) => selected.join(", ")}
-                            >
-                                {entrances.map((num) => (
-                                    <MenuItem key={num} value={num}>
-                                        <Checkbox
-                                            checked={selectedEntrances.includes(
-                                                num
-                                            )}
-                                        />
-                                        <ListItemText
-                                            primary={`Подъезд ${num}`}
-                                        />
-                                    </MenuItem>
-                                ))}
-                            </Select>
-                        </StyledFormControl>
+                        <StyledTextArea
+                            select
+                            label="Подъезды"
+                            value={selectedEntrances}
+                            onChange={handleEntrancesChange}
+                            fullWidth
+                            margin="normal"
+                            required
+                            SelectProps={{
+                                multiple: true,
+                                renderValue: (selected) => selected.join(", "),
+                            }}
+                        >
+                            {entrances.map((num) => (
+                                <MenuItem key={num} value={num}>
+                                    <Checkbox
+                                        checked={selectedEntrances.includes(
+                                            num
+                                        )}
+                                    />
+                                    <ListItemText primary={`Подъезд ${num}`} />
+                                </MenuItem>
+                            ))}
+                        </StyledTextArea>
                     )}
 
                     {!currentAssignment && assignmentScope === "apartment" && (
-                        <StyledFormControl fullWidth margin="normal" required>
-                            <InputLabel>Квартиры</InputLabel>
-                            <Select
-                                multiple
-                                value={selectedApartments}
-                                onChange={handleApartmentsChange}
-                                label="Квартиры"
-                                renderValue={(selected) => {
+                        <StyledTextArea
+                            select
+                            label="Квартиры"
+                            value={selectedApartments}
+                            onChange={handleApartmentsChange}
+                            fullWidth
+                            margin="normal"
+                            required
+                            SelectProps={{
+                                multiple: true,
+                                renderValue: (selected) => {
                                     const selectedApts = apartments.filter(
                                         (a) => selected.includes(a.id)
                                     );
                                     return selectedApts
                                         .map((a) => a.number)
                                         .join(", ");
-                                }}
-                            >
-                                {apartments.map((apartment) => (
-                                    <MenuItem
-                                        key={apartment.id}
-                                        value={apartment.id}
-                                    >
-                                        <Checkbox
-                                            checked={selectedApartments.includes(
-                                                apartment.id
-                                            )}
-                                        />
-                                        <ListItemText
-                                            primary={`Кв. ${apartment.number}`}
-                                            secondary={`Подъезд ${apartment.entrance}`}
-                                        />
-                                    </MenuItem>
-                                ))}
-                            </Select>
-                        </StyledFormControl>
+                                },
+                            }}
+                        >
+                            {apartments.map((apartment) => (
+                                <MenuItem
+                                    key={apartment.id}
+                                    value={apartment.id}
+                                >
+                                    <Checkbox
+                                        checked={selectedApartments.includes(
+                                            apartment.id
+                                        )}
+                                    />
+                                    <ListItemText
+                                        primary={`Кв. ${apartment.number}`}
+                                        secondary={`Подъезд ${apartment.entrance}`}
+                                    />
+                                </MenuItem>
+                            ))}
+                        </StyledTextArea>
                     )}
 
                     {/* Показываем текущую привязку при редактировании */}
@@ -220,28 +221,23 @@ const AssignmentDialog = ({
                     </StyledTextArea>
 
                     {calculationType === "meter" && (
-                        <StyledFormControl fullWidth margin="normal" required>
-                            <InputLabel>Единица измерения</InputLabel>
-                            <Select
-                                name="unit"
-                                defaultValue={
-                                    currentAssignment?.tariffs?.[0]?.unit ||
-                                    "m3"
-                                }
-                                label="Единица измерения"
-                                required
-                            >
-                                <MenuItem value="m3">
-                                    м³ (кубический метр)
-                                </MenuItem>
-                                <MenuItem value="gcal">
-                                    Гкал (гигакалория)
-                                </MenuItem>
-                                <MenuItem value="kwh">
-                                    кВт·ч (киловатт-час)
-                                </MenuItem>
-                            </Select>
-                        </StyledFormControl>
+                        <StyledTextArea
+                            name="unit"
+                            label="Единица измерения"
+                            select
+                            defaultValue={
+                                currentAssignment?.tariffs?.[0]?.unit || "m3"
+                            }
+                            fullWidth
+                            margin="normal"
+                            required
+                        >
+                            <MenuItem value="m3">м³ (кубический метр)</MenuItem>
+                            <MenuItem value="gcal">Гкал (гигакалория)</MenuItem>
+                            <MenuItem value="kwh">
+                                кВт·ч (киловатт-час)
+                            </MenuItem>
+                        </StyledTextArea>
                     )}
 
                     <Box sx={{ display: "flex", alignItems: "center", mt: 2 }}>

@@ -1,5 +1,12 @@
 import React from "react";
-import { Button, Typography, Chip, Switch } from "@mui/material";
+import {
+    Button,
+    Typography,
+    Chip,
+    Switch,
+    LinearProgress,
+    Tooltip,
+} from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 
 const AssignmentsServicesTable = ({
@@ -9,6 +16,7 @@ const AssignmentsServicesTable = ({
     onEdit,
     onDelete,
     onToggle,
+    loading = false,
 }) => {
     const columnsAssignmentsServices = [
         {
@@ -128,20 +136,38 @@ const AssignmentsServicesTable = ({
             field: "actions",
             headerName: "Действия",
             width: 200,
-            renderCell: (params) => (
-                <div>
-                    <Button size="small" onClick={() => onEdit(params.row)}>
-                        Редакт
-                    </Button>
-                    <Button
-                        size="small"
-                        color="error"
-                        onClick={() => onDelete(params.row.id)}
-                    >
-                        Удалить
-                    </Button>
-                </div>
-            ),
+            renderCell: (params) => {
+                const isArchived = params.row.tariff_status === "expired";
+
+                return (
+                    <div>
+                        <Tooltip
+                            title={
+                                isArchived
+                                    ? "Редактирование архивной услуги запрещено"
+                                    : ""
+                            }
+                        >
+                            <span>
+                                <Button
+                                    size="small"
+                                    onClick={() => onEdit(params.row)}
+                                    disabled={isArchived}
+                                >
+                                    Редакт
+                                </Button>
+                            </span>
+                        </Tooltip>
+                        <Button
+                            size="small"
+                            color="error"
+                            onClick={() => onDelete(params.row.id)}
+                        >
+                            Удалить
+                        </Button>
+                    </div>
+                );
+            },
         },
     ];
 
@@ -170,6 +196,8 @@ const AssignmentsServicesTable = ({
                 </Typography>
             </Typography>
 
+            {loading && <LinearProgress />}
+
             <DataGrid
                 rows={assignments}
                 columns={columnsAssignmentsServices}
@@ -179,10 +207,11 @@ const AssignmentsServicesTable = ({
                 }}
                 disableColumnResize
                 density="compact"
+                loading={loading}
             />
 
             <Button variant="contained" onClick={onAdd} sx={{ my: 2 }}>
-                Добавить услугу
+                {loading ? "Загрузка..." : "Добавить услугу"}
             </Button>
         </>
     );

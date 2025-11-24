@@ -1,5 +1,11 @@
 import React from "react";
-import { Button, Typography, Tooltip, Box } from "@mui/material";
+import {
+    Button,
+    Typography,
+    Tooltip,
+    Box,
+    LinearProgress,
+} from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
 
 const AssignmentsTariffsTable = ({
@@ -7,6 +13,7 @@ const AssignmentsTariffsTable = ({
     assignments,
     onEdit,
     onDelete,
+    loading = false,
 }) => {
     const columnsTariffs = [
         {
@@ -40,7 +47,9 @@ const AssignmentsTariffsTable = ({
                 if (!assignment) return "Не указано";
 
                 if (assignment.scope === "apartment") {
-                    return `Квартира ${assignment.apartment_id}` || "Квартира не найдена";
+                    return assignment.apartment_number
+                        ? `Квартира ${assignment.apartment_number}`
+                        : `Квартира ${assignment.apartment_id}`;
                 } else {
                     return `Подъезд ${assignment.entrance}`;
                 }
@@ -62,74 +71,48 @@ const AssignmentsTariffsTable = ({
             width: 150,
         },
         {
-            field: "is_current",
+            field: "statusText",
             headerName: "Статус",
             width: 150,
             sortable: true,
             renderCell: (params) => {
-                const today = new Date();
-                const startDate = new Date(params.row.start_date);
-                const endDate = params.row.end_date
-                    ? new Date(params.row.end_date)
-                    : null;
+                const statusText = params.value;
+                const status = params.row.status;
 
-                // Определяем статус тарифа по датам
-                let status;
-                if (today < startDate) {
-                    status = "future";
-                } else if (endDate && today > endDate) {
-                    status = "expired";
-                } else {
-                    status = "current";
-                }
-
-                // Находим связанную привязку услуги
-                const assignment = assignments.find(
-                    (a) => a.id === params.row.assignment_id
-                );
-                const isAssignmentActive = assignment
-                    ? assignment.is_active
-                    : false;
-
-                // Определяем цвет и текст статуса
                 let color;
-                let statusText;
                 let tooltipText;
 
-                if (!isAssignmentActive) {
-                    color = "grey.500";
-                    statusText = "Отключен";
-                    tooltipText = "Услуга отключена";
-                } else {
-                    switch (status) {
-                        case "current":
-                            color = "success.main"; // Зеленый для активного тарифа
-                            statusText = "Активен";
-                            tooltipText = "Активный тариф";
-                            break;
-                        case "expired":
-                            color = "error.main"; // Красный для устаревшего тарифа
-                            statusText = "Устарел";
-                            tooltipText = "Тариф устарел";
-                            break;
-                        case "future":
-                            color = "info.main"; // Синий для будущего тарифа
-                            statusText = "Будущий";
-                            tooltipText = "Тариф еще не вступил в силу";
-                            break;
-                        default:
-                            color = "grey.500";
-                            statusText = "Неизв.";
-                            tooltipText = "Неизвестный статус";
-                    }
+                switch (status) {
+                    case "current":
+                        color = "success.main";
+                        tooltipText = "Активный тариф";
+                        break;
+                    case "expired":
+                        color = "grey.400";
+                        tooltipText = "Тариф устарел";
+                        break;
+                    case "future":
+                        color = "info.main";
+                        tooltipText = "Тариф еще не вступил в силу";
+                        break;
+                    case "disabled":
+                        color = "secondary.main";
+                        tooltipText = "Услуга отключена";
+                        break;
+                    default:
+                        color = "grey.600";
+                        tooltipText = "Неизвестный статус";
                 }
 
                 return (
                     <Tooltip title={tooltipText}>
                         <Box
                             sx={{
+                                width: "100%",
+                                height: "100%",
                                 display: "flex",
                                 alignItems: "center",
+                                justifyContent: "flex-start",
                                 gap: 1,
                             }}
                         >
@@ -152,21 +135,33 @@ const AssignmentsTariffsTable = ({
         {
             field: "actions",
             headerName: "Действия",
-            width: 200,
-            renderCell: (params) => (
-                <div>
-                    <Button size="small" onClick={() => onEdit(params.row)}>
-                        Редакт
-                    </Button>
-                    <Button
-                        size="small"
-                        color="error"
-                        onClick={() => onDelete(params.row.id)}
-                    >
-                        Удалить
-                    </Button>
-                </div>
-            ),
+            width: 120,
+            renderCell: (params) => {
+                // Запрещаем редактирование устаревших тарифов
+                const isExpired = params.row.status === "expired";
+
+                return (
+                    <div>
+                        <Tooltip
+                            title={
+                                isExpired
+                                    ? "Редактирование устаревшего тарифа запрещено"
+                                    : ""
+                            }
+                        >
+                            <span>
+                                <Button
+                                    size="small"
+                                    onClick={() => onEdit(params.row)}
+                                    disabled={isExpired}
+                                >
+                                    Редакт
+                                </Button>
+                            </span>
+                        </Tooltip>
+                    </div>
+                );
+            },
         },
     ];
 
@@ -194,6 +189,9 @@ const AssignmentsTariffsTable = ({
                     услуг
                 </Typography>
             </Typography>
+
+            {loading && <LinearProgress />}
+
             <DataGrid
                 rows={tariffs}
                 columns={columnsTariffs}
@@ -203,6 +201,7 @@ const AssignmentsTariffsTable = ({
                 }}
                 disableColumnResize
                 density="compact"
+                loading={loading}
             />
         </>
     );

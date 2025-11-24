@@ -18,7 +18,7 @@ class TariffResource extends JsonResource
         $serviceIsActive = $this->service->is_active ?? false;
 
         if (!$serviceIsActive) {
-            $status = 'disabled'; // Новый статус для отключенных услуг
+            $status = 'disabled';
         } elseif ($today->lt($startDate)) {
             $status = 'future';
         } elseif ($endDate && $today->gt($endDate)) {
@@ -37,7 +37,7 @@ class TariffResource extends JsonResource
             'end_date' => $this->end_date,
             'formatted_end_date' => $endDate ? $endDate->format('d.m.Y') : 'бессрочно',
             'is_current' => $status === 'current',
-            'status' => $status, // Теперь status включает информацию об активности услуги
+            'status' => $status,
             'service_is_active' => $serviceIsActive,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,

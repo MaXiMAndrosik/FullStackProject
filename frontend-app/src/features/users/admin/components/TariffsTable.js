@@ -17,7 +17,7 @@ const TariffsTable = ({ tariffs, onEdit, onDelete }) => {
                     statusText = "Активен";
                     break;
                 case "expired":
-                    statusText = "Устарел";
+                    statusText = "Архивный";
                     break;
                 case "future":
                     statusText = "Будущий";
@@ -81,7 +81,7 @@ const TariffsTable = ({ tariffs, onEdit, onDelete }) => {
                 let tooltipText;
 
                 if (!isServiceActive) {
-                    color = "grey.500";
+                    color = "warning.main";
                     tooltipText = "Услуга отключена";
                 } else {
                     switch (status) {
@@ -90,7 +90,7 @@ const TariffsTable = ({ tariffs, onEdit, onDelete }) => {
                             tooltipText = "Активный тариф";
                             break;
                         case "expired":
-                            color = "error.main";
+                            color = "grey.400";
                             tooltipText = "Тариф устарел";
                             break;
                         case "future":
@@ -98,7 +98,7 @@ const TariffsTable = ({ tariffs, onEdit, onDelete }) => {
                             tooltipText = "Тариф еще не вступил в силу";
                             break;
                         default:
-                            color = "grey.500";
+                            color = "grey.600";
                             tooltipText = "Неизвестный статус";
                     }
                 }
@@ -135,20 +135,55 @@ const TariffsTable = ({ tariffs, onEdit, onDelete }) => {
             field: "actions",
             headerName: "Действия",
             width: 200,
-            renderCell: (params) => (
-                <div>
-                    <Button size="small" onClick={() => onEdit(params.row)}>
-                        Редакт
-                    </Button>
-                    <Button
-                        size="small"
-                        color="error"
-                        onClick={() => onDelete(params.row.id)}
-                    >
-                        Удалить
-                    </Button>
-                </div>
-            ),
+            renderCell: (params) => {
+                // Запрещаем редактирование архивных тарифов
+                const isArchived = params.row.status === "expired";
+                // Запрещаем удаление всех тарифов, кроме архивных
+                const isDeletable = params.row.status === "expired";
+
+                return (
+                    <div>
+                        {/* Кнопка редактирования */}
+                        <Tooltip
+                            title={
+                                isArchived
+                                    ? "Редактирование архивного тарифа запрещено"
+                                    : ""
+                            }
+                        >
+                            <span>
+                                <Button
+                                    size="small"
+                                    onClick={() => onEdit(params.row)}
+                                    disabled={isArchived}
+                                >
+                                    Редакт
+                                </Button>
+                            </span>
+                        </Tooltip>
+
+                        {/* Кнопка удаления */}
+                        <Tooltip
+                            title={
+                                !isDeletable
+                                    ? "Удаление разрешено только для архивных тарифов"
+                                    : ""
+                            }
+                        >
+                            <span>
+                                <Button
+                                    size="small"
+                                    color="error"
+                                    onClick={() => onDelete(params.row.id)}
+                                    disabled={!isDeletable}
+                                >
+                                    Удалить
+                                </Button>
+                            </span>
+                        </Tooltip>
+                    </div>
+                );
+            },
         },
     ];
 

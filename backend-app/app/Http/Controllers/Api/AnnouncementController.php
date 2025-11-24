@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Announcement;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 
@@ -13,8 +12,6 @@ class AnnouncementController extends Controller
     // Сохранение объявления
     public function store(Request $request)
     {
-        Log::debug('AnnouncementController store started', ['Request' => $request->all()]);
-
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'message' => 'required|array',
@@ -42,8 +39,6 @@ class AnnouncementController extends Controller
 
         $announcement = Announcement::create($validated);
 
-        Log::debug('AnnouncementController store created', ['Announcement' => $announcement]);
-
         return response()->json([
             'success' => true,
             'data' => $announcement,
@@ -59,8 +54,6 @@ class AnnouncementController extends Controller
 
         // Получаем актуальные сортировка - более новые вверх
         $announcements = Announcement::orderBy('publish', 'desc')->get();
-
-        Log::debug('AnnouncementController load announcements success');
 
         return response()->json($announcements);
     }
@@ -78,8 +71,6 @@ class AnnouncementController extends Controller
             $announcement = Announcement::findOrFail($id);
 
             $announcement->delete();
-
-            Log::debug('AnnouncementController destroy', ['Announcement' => $announcement]);
 
             return response()->json([
                 'success' => true,

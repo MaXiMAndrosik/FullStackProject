@@ -56,14 +56,14 @@ const getErrorMessage = (error) => {
     return isEnglish ? errorMessages.default : message;
 };
 
-export const showNotification = (type, message, duration = 3000) => {
+export const showNotification = (type, message, duration = 5000) => {
     const finalMessage = getErrorMessage(message);
 
     if (notificationHandler) {
         notificationHandler({
             type,
             message: finalMessage,
-            duration,
+            duration: type === "error" ? 7000 : duration, // Ошибки показываем дольше
         });
     }
 };

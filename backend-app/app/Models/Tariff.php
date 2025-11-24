@@ -6,14 +6,14 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Builder;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+
 
 class Tariff extends Model
 {
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array
-     */
+
+    use HasFactory;
+
     protected $fillable = [
         'service_id',
         'rate',
@@ -22,20 +22,12 @@ class Tariff extends Model
         'end_date',
     ];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array
-     */
     protected $casts = [
         'start_date' => 'date:Y-m-d',
         'end_date' => 'date:Y-m-d',
         'rate' => 'decimal:4'
     ];
 
-    /**
-     * Получить услугу, к которой относится тариф.
-     */
     public function service(): BelongsTo
     {
         return $this->belongsTo(Service::class);
@@ -53,12 +45,19 @@ class Tariff extends Model
     }
 
     /**
-     * Проверить, был ли тариф активен на указанную дату.
+     * Проверить, является ли тариф будущим.
      */
-    public function isActiveAt(Carbon $date): bool
+    public function isFuture(): bool
     {
-        return $this->start_date <= $date &&
-            ($this->end_date === null || $this->end_date >= $date);
+        return $this->start_date > Carbon::today();
+    }
+
+    /**
+     * Проверить, является ли тариф устаревшим.
+     */
+    public function isExpired(): bool
+    {
+        return $this->end_date && $this->end_date < Carbon::today();
     }
 
     /**
@@ -82,28 +81,26 @@ class Tariff extends Model
     }
 
     /**
-     * Scope для тарифов определенной услуги.
+     * Scope для будущих тарифов.
      */
-    public function scopeForService(Builder $query, int $serviceId): Builder
+    public function scopeFuture(Builder $query): Builder
     {
-        return $query->where('service_id', $serviceId);
+        return $query->where('start_date', '>', Carbon::today());
     }
 
     /**
-     * Активировать тариф (установить как текущий).
-     * Деактивирует предыдущий активный тариф.
+     * Scope для устаревших тарифов.
      */
-    public function activate(): void
+    public function scopeExpired(Builder $query): Builder
     {
-        // Деактивируем предыдущий активный тариф
-        Tariff::forService($this->service_id)
-            ->current()
-            ->update(['end_date' => Carbon::yesterday()]);
+        return $query->where('end_date', '<', Carbon::today());
+    }
 
-        // Активируем текущий тариф
-        $this->update([
-            'start_date' => Carbon::today(),
-            'end_date' => null
-        ]);
+    /**
+     * Scope для тарифов, которые можно удалить
+     */
+    public function scopeDeletable(Builder $query): Builder
+    {
+        return $this->scopeExpired($query);
     }
 }

@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Services\WeatherService;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 
@@ -17,10 +16,8 @@ class WeatherController extends Controller
         ]);
 
         try {
-            Log::debug('WeatherController get', ['Request' => $request->all()]);
             return $weatherService->getWeatherData($validated['city'] ?? null);
         } catch (\Exception $e) {
-            Log::warning('WeatherController get fail', ['Exception' => $e->getMessage()]);
             return response()->json([
                 'error' => $e->getMessage()
             ], 500);

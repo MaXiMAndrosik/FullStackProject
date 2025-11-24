@@ -52,9 +52,21 @@ const TariffDialog = ({
         }
     }, [currentTariff]);
 
-    // Обработчик применения рассчитанного тарифа
-    const handleApplyCalculatedTariff = (rate) => {
-        setRateValue(rate);
+    // Обработчик применения рассчитанного тарифа - РАСШИРЯЕМ ДЛЯ РАССРОЧКИ
+    const handleApplyCalculatedTariff = (result) => {
+        if (typeof result === "object") {
+            // Рассрочка включена - объект с данными
+            setRateValue(result.rate.toString());
+            if (result.start_date) {
+                setStartDate(result.start_date);
+            }
+            if (result.end_date) {
+                setEndDate(result.end_date);
+            }
+        } else {
+            // Без рассрочки - просто число
+            setRateValue(result.toString());
+        }
         setOpenCalculator(false);
     };
 
@@ -142,6 +154,7 @@ const TariffDialog = ({
                     service={service}
                     apartments={apartments}
                     onSubmit={handleApplyCalculatedTariff}
+                    initialStartDate={startDate}
                 />
             )}
         </>

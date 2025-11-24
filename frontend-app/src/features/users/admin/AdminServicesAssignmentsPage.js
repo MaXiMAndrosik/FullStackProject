@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react";
-import { Container, Box } from "@mui/material";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { Container, Box, CircularProgress, Alert } from "@mui/material";
 import apiClient from "../../../app/api/client";
 import {
     showSuccess,
@@ -25,32 +25,67 @@ const AdminServicesAssignmentsPage = () => {
     const [openTariffs, setTariffsOpen] = useState(false);
     const [currentTariff, setCurrentTariff] = useState(null);
 
+    // Добавляем состояния загрузки и ошибок
+    const [loading, setLoading] = useState({
+        assignments: false,
+        apartments: false,
+        action: false,
+    });
+    const [errors, setErrors] = useState({
+        assignments: null,
+        apartments: null,
+    });
+
     // Загрузка услуг и тарифов
     useEffect(() => {
-        fetchAssignmentsServices();
-        fetchApartments();
+        const loadInitialData = async () => {
+            try {
+                await Promise.all([
+                    fetchAssignmentsServices(),
+                    fetchApartments(),
+                ]);
+            } catch (error) {
+                showError("Ошибка загрузки данных");
+            }
+        };
+
+        loadInitialData();
     }, []);
 
     // Загрузка сервисов с тарифами
-    const fetchAssignmentsServices = () => {
-        apiClient
-            .get("/admin/service-assignments")
-            .then((res) => setAssignmentsServices(res.data))
-            .catch((error) => {
-                showError("Ошибка загрузки услуг");
-                setAssignmentsServices([]);
-            });
+    const fetchAssignmentsServices = async () => {
+        setLoading((prev) => ({ ...prev, assignments: true }));
+        setErrors((prev) => ({ ...prev, assignments: null }));
+
+        try {
+            const res = await apiClient.get("/admin/service-assignments");
+            setAssignmentsServices(res.data);
+        } catch (error) {
+            const errorMsg = "Ошибка загрузки услуг";
+            showError(errorMsg);
+            setErrors((prev) => ({ ...prev, assignments: errorMsg }));
+            setAssignmentsServices([]);
+        } finally {
+            setLoading((prev) => ({ ...prev, assignments: false }));
+        }
     };
 
     // Загрузка квартир
-    const fetchApartments = () => {
-        apiClient
-            .get("/admin/apartments")
-            .then((res) => setApartments(res.data))
-            .catch((error) => {
-                showError("Ошибка загрузки квартир");
-                setApartments([]);
-            });
+    const fetchApartments = async () => {
+        setLoading((prev) => ({ ...prev, apartments: true }));
+        setErrors((prev) => ({ ...prev, apartments: null }));
+
+        try {
+            const res = await apiClient.get("/admin/apartments");
+            setApartments(res.data);
+        } catch (error) {
+            const errorMsg = "Ошибка загрузки квартир";
+            showError(errorMsg);
+            setErrors((prev) => ({ ...prev, apartments: errorMsg }));
+            setApartments([]);
+        } finally {
+            setLoading((prev) => ({ ...prev, apartments: false }));
+        }
     };
 
     // ---------------------------------------------------------------------------------------------------
@@ -62,51 +97,125 @@ const AdminServicesAssignmentsPage = () => {
         kwh: "руб/кВт·ч",
         fixed: "руб",
     };
+
     // Функция для форматирования числа с удалением незначащих нулей
-    const formatRate = (value) => {
+    const formatRate = useCallback((value) => {
         const formatted = parseFloat(value)
             .toFixed(4)
             .replace(/\.?0+$/, "");
         return formatted.includes(".") ? formatted : `${formatted}.0`;
-    };
-    const formatDate = (dateString) => {
+    }, []);
+
+    const formatDate = useCallback((dateString) => {
         return dateString ? format(new Date(dateString), "dd.MM.yyyy") : "";
-    };
-    // ---------------------------------------------------------------------------------------------------
-    // Получим все услуги и отформатируем
-    const allAssignmentsServices = assignmentsServices.map((service) => {
-        let currentTariff = "Нет активного";
+    }, []);
 
-        if (service.tariffs && Array.isArray(service.tariffs)) {
-            const today = new Date();
-            const activeTariff = service.tariffs.find((tariff) => {
-                const startDate = new Date(tariff.start_date);
-                const endDate = tariff.end_date
-                    ? new Date(tariff.end_date)
+    // ---------------------------------------------------------------------------------------------------
+    // Получим все услуги и отформатируем - исправляем useMemo
+    const allAssignmentsServices = useMemo(() => {
+        return assignmentsServices.map((service) => {
+            let currentTariff = "Нет активного";
+            let tariffStatus = "none"; // 'active', 'future', 'expired', 'none'
+
+            if (service.tariff) {
+                const today = new Date();
+                const startDate = new Date(service.tariff.start_date);
+                const endDate = service.tariff.end_date
+                    ? new Date(service.tariff.end_date)
                     : null;
-                return startDate <= today && (!endDate || endDate >= today);
-            });
 
-            if (activeTariff) {
-                const formattedRate = formatRate(activeTariff.rate);
-                const unitLabel = unitLabels[activeTariff.unit] || "руб";
-                currentTariff = `${formattedRate} ${unitLabel}`;
+                if (startDate <= today && (!endDate || endDate >= today)) {
+                    // Активный тариф
+                    const formattedRate = formatRate(service.tariff.rate);
+                    const unitLabel = unitLabels[service.tariff.unit] || "руб";
+                    currentTariff = `${formattedRate} ${unitLabel}`;
+                    tariffStatus = "active";
+                } else if (startDate > today) {
+                    // Будущий тариф
+                    currentTariff = "Ожидается";
+                    tariffStatus = "future";
+                } else if (endDate && endDate < today) {
+                    // Устаревший тариф
+                    currentTariff = "Архивный";
+                    tariffStatus = "expired";
+                }
+
+                // Если не нашли подходящий тариф, но есть устаревшие
+                if (tariffStatus === "none") {
+                    if (endDate && endDate < today) {
+                        currentTariff = "Архивный";
+                        tariffStatus = "expired";
+                    }
+                }
             }
-        }
 
-        return {
-            ...service,
-            current_tariff: currentTariff,
-        };
-    });
+            return {
+                ...service,
+                current_tariff: currentTariff,
+                tariff_status: tariffStatus,
+            };
+        });
+    }, [assignmentsServices, formatRate]);
+
     // Получим все номера подьездов
-    const entrances = [...new Set(apartments.map((a) => a.entrance))].sort();
-    // ---------------------------------------------------------------------------------------------------
-    // Обработчики для Assignments
-    // Обработчики диалога
-    const handleAssignmentOpen = (assignment = null) => {
-        setCurrentAssignment(assignment);
+    const entrances = useMemo(
+        () => [...new Set(apartments.map((a) => a.entrance))].sort(),
+        [apartments]
+    );
 
+    // ---------------------------------------------------------------------------------------------------
+    // Получим все тарифы из ответа сервера и отформатируем
+    const allTariffs = useMemo(
+        () =>
+            assignmentsServices.flatMap((service) => {
+                if (!service.tariff) return []; // Изменили service.tariffs на service.tariff
+
+                const today = new Date();
+                const startDate = new Date(service.tariff.start_date);
+                const endDate = service.tariff.end_date
+                    ? new Date(service.tariff.end_date)
+                    : null;
+
+                // Определяем статус тарифа - СОХРАНЯЕМ ВАШУ ЛОГИКУ ПОРЯДКА ПРОВЕРОК
+                let status;
+                let statusText;
+
+                if (endDate && endDate < today) {
+                    status = "expired";
+                    statusText = "Архивный";
+                } else if (startDate > today) {
+                    status = "future";
+                    statusText = "Будущий";
+                } else if (!service.is_active) {
+                    status = "disabled";
+                    statusText = "Отключен";
+                } else {
+                    status = "current";
+                    statusText = "Активен";
+                }
+
+                const formattedRate = formatRate(service.tariff.rate);
+                const unitLabel = unitLabels[service.tariff.unit] || "руб";
+
+                return {
+                    ...service.tariff,
+                    id: service.tariff.id,
+                    service_name: service.name || "Неизвестная услуга",
+                    service_is_active: service.is_active,
+                    formatted_rate: `${formattedRate} ${unitLabel}`,
+                    formatted_start_date: formatDate(service.tariff.start_date),
+                    formatted_end_date: formatDate(service.tariff.end_date),
+                    status: status, // 'disabled', 'current', 'expired', 'future'
+                    statusText: statusText,
+                    assignment_id: service.id,
+                };
+            }),
+        [assignmentsServices, formatRate, formatDate]
+    );
+
+    // Обработчики для Assignments
+    const handleAssignmentOpen = useCallback((assignment = null) => {
+        setCurrentAssignment(assignment);
         setSelectedEntrances([]);
         setSelectedApartments([]);
 
@@ -124,169 +233,238 @@ const AdminServicesAssignmentsPage = () => {
         }
 
         setAssignmentOpen(true);
-    };
+    }, []);
 
-    const handleAssignmentClose = () => {
+    const handleAssignmentClose = useCallback(() => {
         setAssignmentOpen(false);
         setCurrentAssignment(null);
         setSelectedEntrances([]);
         setSelectedApartments([]);
-    };
+    }, []);
 
     // Переключение активности
-    const handleAssignmentToggle = async (id, isActive) => {
+    const handleAssignmentToggle = useCallback(async (id, isActive) => {
+        setLoading((prev) => ({ ...prev, action: true }));
+
+        setAssignmentsServices((prev) =>
+            prev.map((item) =>
+                item.id === id ? { ...item, is_active: !isActive } : item
+            )
+        );
+
         try {
-            await apiClient.put(
+            const response = await apiClient.put(
                 `/admin/service-assignments/${id}/toggle-active`,
-                {
-                    is_active: !isActive,
-                }
+                { is_active: !isActive }
             );
-            showSuccess("Статус изменен");
-            fetchAssignmentsServices();
+
+            if (response.data.success) {
+                const updatedAssignment = response.data.data;
+                setAssignmentsServices((prev) =>
+                    prev.map((item) =>
+                        item.id === id ? updatedAssignment : item
+                    )
+                );
+                showSuccess(response.data.message);
+            }
         } catch (error) {
-            showError("Ошибка переключения");
+            showError(error.response?.data?.message || "Ошибка переключения");
+        } finally {
+            setLoading((prev) => ({ ...prev, action: false }));
         }
-    };
+    }, []);
 
     // Удаление услуги
-    const handleAssignmentDelete = async (id) => {
+    const handleAssignmentDelete = useCallback(async (id) => {
         if (window.confirm("Вы уверены, что хотите удалить эту услугу?")) {
+            setLoading((prev) => ({ ...prev, action: true }));
             try {
-                await apiClient.delete(`/admin/service-assignments/${id}`);
-                showSuccess("Услуга удалена");
-                fetchAssignmentsServices();
+                const response = await apiClient.delete(
+                    `/admin/service-assignments/${id}`
+                );
+
+                if (response.data.success) {
+                    setAssignmentsServices((prev) =>
+                        prev.filter((item) => item.id !== id)
+                    );
+                    showSuccess(response.data.message);
+                }
             } catch (error) {
-                showError("Ошибка удаления услуги");
+                showError(
+                    error.response?.data?.message || "Ошибка удаления услуги"
+                );
+            } finally {
+                setLoading((prev) => ({ ...prev, action: false }));
             }
         }
-    };
+    }, []);
+
     // Сохранение услуги
-    const handleAssignmentSubmit = async (e) => {
-        e.preventDefault();
-        const data = new FormData(e.target);
-        const baseData = Object.fromEntries(data.entries());
-        baseData.is_active = baseData.is_active === "on";
+    const handleAssignmentSubmit = useCallback(
+        async (e) => {
+            e.preventDefault();
+            setLoading((prev) => ({ ...prev, action: true }));
 
-        try {
-            if (currentAssignment) {
-                // Для редактирования отправляем только разрешенные поля
-                const assignmentData = {
-                    name: baseData.name,
-                    type: baseData.type,
-                    unit: baseData.unit || null,
-                    calculation_type: baseData.calculation_type,
-                    is_active: baseData.is_active,
-                };
+            const data = new FormData(e.target);
+            const baseData = Object.fromEntries(data.entries());
+            baseData.is_active = baseData.is_active === "on";
 
-                await apiClient.put(
-                    `/admin/service-assignments/${currentAssignment.id}`,
-                    assignmentData
-                );
-                showSuccess("Услуга обновлена");
-            } else {
-                // Для создания подготавливаем массив назначений
-                const assignmentsToCreate = [];
+            try {
+                let response;
+                if (currentAssignment) {
+                    // Для редактирования отправляем только разрешенные поля
+                    const assignmentData = {
+                        name: baseData.name,
+                        type: baseData.type,
+                        unit: baseData.unit || null,
+                        calculation_type: baseData.calculation_type,
+                        is_active: baseData.is_active,
+                    };
 
-                if (assignmentScope === "entrance") {
-                    selectedEntrances.forEach((entrance) => {
-                        assignmentsToCreate.push({
-                            ...baseData,
-                            scope: "entrance",
-                            entrance: entrance,
-                            apartment_id: null,
-                        });
-                    });
+                    response = await apiClient.put(
+                        `/admin/service-assignments/${currentAssignment.id}`,
+                        assignmentData
+                    );
+
+                    if (response.data.success) {
+                        const updatedAssignment = response.data.data;
+                        setAssignmentsServices((prev) =>
+                            prev.map((item) =>
+                                item.id === currentAssignment.id
+                                    ? updatedAssignment
+                                    : item
+                            )
+                        );
+                        showSuccess(response.data.message);
+                    }
                 } else {
-                    selectedApartments.forEach((apartment_id) => {
-                        assignmentsToCreate.push({
-                            ...baseData,
-                            scope: "apartment",
-                            apartment_id: apartment_id,
-                            entrance: null,
+                    // Для создания подготавливаем массив назначений
+                    const assignmentsToCreate = [];
+
+                    if (assignmentScope === "entrance") {
+                        selectedEntrances.forEach((entrance) => {
+                            assignmentsToCreate.push({
+                                ...baseData,
+                                scope: "entrance",
+                                entrance: entrance,
+                                apartment_id: null,
+                            });
                         });
-                    });
+                    } else {
+                        selectedApartments.forEach((apartment_id) => {
+                            assignmentsToCreate.push({
+                                ...baseData,
+                                scope: "apartment",
+                                apartment_id: apartment_id,
+                                entrance: null,
+                            });
+                        });
+                    }
+
+                    if (assignmentsToCreate.length === 0) {
+                        showError("Выберите хотя бы один объект");
+                        return;
+                    }
+
+                    response = await apiClient.post(
+                        "/admin/service-assignments",
+                        assignmentsToCreate
+                    );
+
+                    if (response.data.success) {
+                        const newAssignments = response.data.data;
+                        setAssignmentsServices((prev) => [
+                            ...prev,
+                            ...newAssignments,
+                        ]);
+                        showSuccess(
+                            `Создано ${assignmentsToCreate.length} услуг`
+                        );
+                    }
                 }
 
-                if (assignmentsToCreate.length === 0) {
-                    showError("Выберите хотя бы один объект");
-                    return;
-                }
-
-                await apiClient.post(
-                    "/admin/service-assignments",
-                    assignmentsToCreate
+                handleAssignmentClose();
+            } catch (error) {
+                showError(
+                    error.response?.data?.message || "Ошибка сохранения услуги"
                 );
-                showSuccess(`Создано ${assignmentsToCreate.length} услуг`);
+            } finally {
+                setLoading((prev) => ({ ...prev, action: false }));
             }
-
-            fetchAssignmentsServices();
-            handleAssignmentClose();
-        } catch (error) {
-            showError("Ошибка сохранения услуги");
-            console.error(error);
-        }
-    };
-
-    // ---------------------------------------------------------------------------------------------------
-    // Получим все тарифы из ответа сервера и отформатируем
-    const allTariffs = assignmentsServices.flatMap((service) =>
-        (service.tariffs || []).map((tariff) => {
-            // Проверка и форматирование для каждого тарифа
-            const isCurrent = (() => {
-                const today = new Date();
-                const startDate = new Date(tariff.start_date);
-                const endDate = tariff.end_date
-                    ? new Date(tariff.end_date)
-                    : null;
-                return startDate <= today && (!endDate || endDate >= today);
-            })();
-
-            const formattedRate = formatRate(tariff.rate);
-            const unitLabel = unitLabels[tariff.unit] || "руб";
-
-            return {
-                ...tariff,
-                id: tariff.id, // Убедимся, что ID присутствует
-                service_name: service.name || "Неизвестная услуга",
-                formatted_rate: `${formattedRate} ${unitLabel}`,
-                formatted_start_date: formatDate(tariff.start_date),
-                formatted_end_date: formatDate(tariff.end_date),
-                is_current: isCurrent,
-            };
-        })
+        },
+        [
+            currentAssignment,
+            assignmentScope,
+            selectedEntrances,
+            selectedApartments,
+            handleAssignmentClose,
+        ]
     );
 
-    // Обработчики диалога
-    const handleOpenTariff = (tariff = null) => {
+    // Обработчики диалога тарифов
+    const handleOpenTariff = useCallback((tariff = null) => {
         setCurrentTariff(tariff);
         setTariffsOpen(true);
-    };
-    const handleCloseTariff = () => {
+    }, []);
+
+    const handleCloseTariff = useCallback(() => {
         setTariffsOpen(false);
         setCurrentTariff(null);
-    };
+    }, []);
+
     // Сохранение тарифа
-    const handleSubmitTariff = async (e) => {
-        e.preventDefault();
-        const data = new FormData(e.target);
-        const tariffData = Object.fromEntries(data.entries());
+    const handleSubmitTariff = useCallback(
+        async (e) => {
+            e.preventDefault();
+            setLoading((prev) => ({ ...prev, action: true }));
 
-        // Преобразование пустых строк в null
-        if (tariffData.end_date === "") tariffData.end_date = null;
+            const data = new FormData(e.target);
+            const tariffData = Object.fromEntries(data.entries());
 
-        try {
-            await apiClient.put(
-                `/admin/assignment-tariffs/${currentTariff.id}`,
-                tariffData
-            );
-            showSuccess("Тариф сохранен");
-            fetchAssignmentsServices();
-            handleCloseTariff();
-        } catch (error) {
-            showError("Ошибка сохранения");
-        }
-    };
+            // Преобразование пустых строк в null
+            if (tariffData.end_date === "") tariffData.end_date = null;
+
+            // Форматируем rate до 4 знаков
+            if (tariffData.rate) {
+                tariffData.rate = parseFloat(tariffData.rate).toFixed(4);
+            }
+
+            try {
+                // Отправляем данные
+                const response = await apiClient.put(
+                    `/admin/assignment-tariffs/${currentTariff.id}`,
+                    {
+                        rate: tariffData.rate,
+                        start_date: tariffData.start_date,
+                        end_date: tariffData.end_date,
+                    }
+                );
+
+                if (response.data.success) {
+                    // Обновляем конкретную услугу данными с сервера
+                    const updatedAssignment = response.data.data;
+                    setAssignmentsServices((prev) =>
+                        prev.map((item) =>
+                            item.id === updatedAssignment.id
+                                ? updatedAssignment
+                                : item
+                        )
+                    );
+                    showSuccess(response.data.message);
+                }
+
+                handleCloseTariff();
+            } catch (error) {
+                showError(
+                    error.response?.data?.message || "Ошибка сохранения тарифа"
+                );
+            } finally {
+                setLoading((prev) => ({ ...prev, action: false }));
+            }
+        },
+        [currentTariff, handleCloseTariff]
+    );
+
     // Удаление тарифа
     const handleDeleteTariff = async (id) => {
         if (window.confirm("Вы уверены, что хотите удалить этот тариф?")) {
@@ -299,6 +477,20 @@ const AdminServicesAssignmentsPage = () => {
             }
         }
     };
+
+    // Показываем загрузку если грузятся основные данные
+    if (loading.assignments || loading.apartments) {
+        return (
+            <Box
+                display="flex"
+                justifyContent="center"
+                alignItems="center"
+                minHeight="400px"
+            >
+                <CircularProgress />
+            </Box>
+        );
+    }
 
     return (
         <Box
@@ -315,7 +507,6 @@ const AdminServicesAssignmentsPage = () => {
             })}
         >
             <Container
-                // maxWidth="lg"
                 maxWidth={false}
                 sx={{
                     pt: { xs: 14, sm: 8 },
@@ -324,6 +515,18 @@ const AdminServicesAssignmentsPage = () => {
                     mb: 3,
                 }}
             >
+                {/* Показываем ошибки */}
+                {errors.assignments && (
+                    <Alert severity="error" sx={{ mb: 2 }}>
+                        {errors.assignments}
+                    </Alert>
+                )}
+                {errors.apartments && (
+                    <Alert severity="warning" sx={{ mb: 2 }}>
+                        {errors.apartments}
+                    </Alert>
+                )}
+
                 <AssignmentsServicesTable
                     assignments={allAssignmentsServices}
                     apartments={apartments}
@@ -331,6 +534,7 @@ const AdminServicesAssignmentsPage = () => {
                     onEdit={handleAssignmentOpen}
                     onDelete={handleAssignmentDelete}
                     onToggle={handleAssignmentToggle}
+                    loading={loading.action}
                 />
 
                 <AssignmentsTariffsTable
@@ -338,6 +542,7 @@ const AdminServicesAssignmentsPage = () => {
                     assignments={allAssignmentsServices}
                     onAdd={() => handleOpenTariff()}
                     onEdit={handleOpenTariff}
+                    loading={loading.action}
                     onDelete={handleDeleteTariff}
                 />
             </Container>
@@ -358,6 +563,7 @@ const AdminServicesAssignmentsPage = () => {
                 setSelectedApartments={setSelectedApartments}
                 calculationType={calculationType}
                 setCalculationType={setCalculationType}
+                loading={loading.action}
             />
 
             <AssignmentTariffDialog
@@ -368,6 +574,7 @@ const AdminServicesAssignmentsPage = () => {
                 services={allAssignmentsServices}
                 apartments={apartments}
                 entrances={entrances}
+                loading={loading.action}
             />
         </Box>
     );

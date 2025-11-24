@@ -8,8 +8,6 @@ const ServicesTable = ({
     onEdit,
     onDelete,
     onToggle,
-    onManageMeters,
-    meterTypes,
 }) => {
     const columnsServices = [
         {

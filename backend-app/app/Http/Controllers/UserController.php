@@ -13,7 +13,7 @@ class UserController extends Controller
     {
         $user = $request->user();
 
-        Log::debug('UserController current', [
+        Log::info('UserController current', [
             'user_id' => $user->id,
             'email' => $user->email
         ]);
@@ -119,9 +119,6 @@ class UserController extends Controller
      */
     public function destroy($id)
     {
-
-        Log::debug('UserController destroy', ['User delete' => $id]);
-
 
         try {
 

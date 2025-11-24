@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Container, Box } from "@mui/material";
+import { Container, Box, CircularProgress } from "@mui/material";
 import apiClient from "../../../app/api/client";
 import {
     showSuccess,
@@ -23,43 +23,85 @@ const AdminServicesPage = () => {
     const [apartments, setApartments] = useState([]);
     const [meterTypes, setMeterTypes] = useState([]);
 
+    // Добавляем состояния загрузки и ошибок
+    const [loading, setLoading] = useState({
+        services: false,
+        apartments: false,
+        meterTypes: false,
+        action: false,
+    });
+    const [errors, setErrors] = useState({
+        services: null,
+        apartments: null,
+        meterTypes: null,
+    });
+
     // Загрузка услуг и тарифов
     useEffect(() => {
-        fetchServices();
-        fetchApartments();
-        fetchMeterTypes();
+        const loadInitialData = async () => {
+            try {
+                await Promise.all([
+                    fetchServices(),
+                    fetchApartments(),
+                    fetchMeterTypes(),
+                ]);
+            } catch (error) {
+                showError("Ошибка загрузки данных");
+            }
+        };
+
+        loadInitialData();
     }, []);
 
-    // Загрузка сервисов с тарифами
-    const fetchServices = () => {
-        apiClient
-            .get("/admin/services")
-            .then((res) => setServices(res.data.data))
-            .catch((error) => {
-                showError("Ошибка загрузки услуг");
-                setServices([]);
-            });
+    // Обновляем функции загрузки с обработкой состояний
+    const fetchServices = async () => {
+        setLoading((prev) => ({ ...prev, services: true }));
+        setErrors((prev) => ({ ...prev, services: null }));
+        try {
+            const res = await apiClient.get("/admin/services");
+            setServices(res.data.data);
+        } catch (error) {
+            const errorMsg = "Ошибка загрузки услуг";
+            showError(errorMsg);
+            setErrors((prev) => ({ ...prev, services: errorMsg }));
+            setServices([]);
+        } finally {
+            setLoading((prev) => ({ ...prev, services: false }));
+        }
     };
 
     // Загрузка типов счетчиков для привязки
     const fetchMeterTypes = async () => {
+        setLoading((prev) => ({ ...prev, meterTypes: true }));
+        setErrors((prev) => ({ ...prev, meterTypes: null }));
         try {
             const response = await apiClient.get("/admin/meter-types");
             setMeterTypes(response.data);
         } catch (error) {
-            console.error("Ошибка при загрузке типов счетчиков:", error);
+            const errorMsg = "Ошибка при загрузке типов счетчиков";
+            showError(errorMsg);
+            setErrors((prev) => ({ ...prev, meterTypes: errorMsg }));
+            setMeterTypes([]);
+        } finally {
+            setLoading((prev) => ({ ...prev, meterTypes: false }));
         }
     };
 
     // Загрузка квартир для расчета
-    const fetchApartments = () => {
-        apiClient
-            .get("/admin/apartments")
-            .then((res) => setApartments(res.data))
-            .catch((error) => {
-                showError("Ошибка загрузки квартир");
-                setApartments([]);
-            });
+    const fetchApartments = async () => {
+        setLoading((prev) => ({ ...prev, apartments: true }));
+        setErrors((prev) => ({ ...prev, apartments: null }));
+        try {
+            const res = await apiClient.get("/admin/apartments");
+            setApartments(res.data);
+        } catch (error) {
+            const errorMsg = "Ошибка загрузки квартир";
+            showError(errorMsg);
+            setErrors((prev) => ({ ...prev, apartments: errorMsg }));
+            setApartments([]);
+        } finally {
+            setLoading((prev) => ({ ...prev, apartments: false }));
+        }
     };
 
     // Единицы измерения для тарифов на услуги
@@ -155,19 +197,20 @@ const AdminServicesPage = () => {
         serviceData.is_active = serviceData.is_active === "on";
 
         try {
+            let response;
             if (currentService) {
-                await apiClient.put(
+                response = await apiClient.put(
                     `/admin/services/${currentService.id}`,
                     serviceData
                 );
             } else {
-                await apiClient.post("/admin/services", serviceData);
+                response = await apiClient.post("/admin/services", serviceData);
             }
-            showSuccess("Услуга сохранена");
+            showSuccess(response.data.message);
             fetchServices();
             handleServiceClose();
         } catch (error) {
-            showError("Ошибка сохранения");
+            showError(error);
         }
     };
     // Переключение активности услуги
@@ -246,15 +289,15 @@ const AdminServicesPage = () => {
         if (tariffData.end_date === "") tariffData.end_date = null;
 
         try {
-            await apiClient.put(
+            const response = await apiClient.put(
                 `/admin/tariffs/${currentTariff.id}`,
                 tariffData
             );
-            showSuccess("Тариф сохранен");
+            showSuccess(response.data.message);
             fetchServices();
             handleCloseTariff();
         } catch (error) {
-            showError("Ошибка сохранения");
+            showError(error);
         }
     };
     // Удаление тарифа
@@ -269,6 +312,20 @@ const AdminServicesPage = () => {
             }
         }
     };
+
+    // Показываем загрузку если грузятся основные данные
+    if (loading.services || loading.services) {
+        return (
+            <Box
+                display="flex"
+                justifyContent="center"
+                alignItems="center"
+                minHeight="400px"
+            >
+                <CircularProgress />
+            </Box>
+        );
+    }
 
     return (
         <Box
@@ -301,6 +358,7 @@ const AdminServicesPage = () => {
                     onDelete={handleServiceDelete}
                     onToggle={handleServiceToggle}
                     meterTypes={meterTypes}
+                    loading={loading.action}
                 />
 
                 <TariffsTable
@@ -309,6 +367,7 @@ const AdminServicesPage = () => {
                     onAdd={() => handleOpenTariff()}
                     onEdit={handleOpenTariff}
                     onDelete={handleDeleteTariff}
+                    loading={loading.action}
                 />
             </Container>
 
@@ -320,6 +379,7 @@ const AdminServicesPage = () => {
                 calculationType={calculationType}
                 setCalculationType={setCalculationType}
                 meterTypes={meterTypes}
+                loading={loading.action}
             />
 
             <TariffDialog
@@ -329,6 +389,7 @@ const AdminServicesPage = () => {
                 onSubmit={handleSubmitTariff}
                 services={services}
                 apartments={apartments}
+                loading={loading.action}
             />
         </Box>
     );

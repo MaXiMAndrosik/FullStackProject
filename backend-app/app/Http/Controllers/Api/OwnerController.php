@@ -20,8 +20,6 @@ class OwnerController extends Controller
     public function index()
     {
 
-        // $owners = Owner::with('apartment')->get();
-
         $owners = Owner::with('apartment')
             ->join('apartments', 'owners.apartment_id', '=', 'apartments.id')
             ->orderByRaw('CAST(apartments.number AS UNSIGNED)')
@@ -60,8 +58,6 @@ class OwnerController extends Controller
      */
     public function store(Request $request)
     {
-
-        Log::debug('OwnerController store', ['Request' => $request->all()]);
 
         $validated = $request->validate([
             'last_name' => 'required|string|max:255',
@@ -135,10 +131,6 @@ class OwnerController extends Controller
      */
     public function update(Request $request, Owner $owner)
     {
-        Log::debug('OwnerController update', [
-            'Request' => $request->all(),
-            'Owner' => $owner
-        ]);
 
         if (isset($owner['ownership_end_date'])) {
             return response()->json([
@@ -192,6 +184,8 @@ class OwnerController extends Controller
                 ]);
             }
         });
+
+        Log::info('OwnerController update', ['Owner update' => $owner]);
 
         return response()->json([
             'message' => 'Данные владельца обновлены',

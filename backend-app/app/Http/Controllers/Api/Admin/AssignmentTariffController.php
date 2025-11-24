@@ -12,7 +12,7 @@ use Illuminate\Http\Request;
 
 class AssignmentTariffController extends Controller
 {
-    public function store(Request $request, ServiceAssignment $assignment_tariff)
+    public function store(Request $request, ServiceAssignment $service_assignment)
     {
         $validated = $request->validate([
             'rate' => 'required|numeric',
@@ -21,18 +21,14 @@ class AssignmentTariffController extends Controller
             'end_date' => 'nullable|date|after:start_date',
         ]);
 
-        $tariff = $assignment_tariff->customTariff()->create($validated);
+        // Создаем тариф через отношение
+        $service_assignment->tariff()->create($validated);
 
         return response()->noContent(201);
     }
 
     public function update(Request $request, AssignmentTariff $assignment_tariff)
     {
-
-        Log::debug('AssignmentTariffController update', [
-            'Request' => $request->all(),
-            'AssignmentTariff' => $assignment_tariff
-        ]);
 
         // Проверяем, что услуга существует
         $serviceExists = ServiceAssignment::where('id', $assignment_tariff->assignment_id)->exists();
@@ -43,65 +39,81 @@ class AssignmentTariffController extends Controller
             );
         }
 
-        Log::debug('AssignmentTariffController update', ['Request' => $request->all()]);
-
-        // Валидация входных данных
-        $validated = $request->validate([
-            'rate' => 'required|numeric|min:0',
-            'start_date' => 'required|date'
-        ]);
-
-        Log::debug('AssignmentTariffController update', ['validated' => $validated]);
-
-        // Дата начала нового тарифа
-        $newStartDate = Carbon::parse($validated['start_date']);
-
-        // Для старого тарифа: end_date = за день до начала нового тарифа
-        $endDateForOld = $newStartDate->copy()->subDay();
-
-        // Создаем новый тариф
-        $newTariff = AssignmentTariff::create([
-            'assignment_id' => $assignment_tariff->assignment_id,
-            'rate' => $validated['rate'],
-            'unit' => $assignment_tariff->unit,
-            'start_date' => $newStartDate,
-            'end_date' => null
-        ]);
-
-        // Обновляем старый тариф
-        $assignment_tariff->update(['end_date' => $endDateForOld]);
-
-        Log::info('AssignmentTariffController update', ['newTariff' => $newTariff]);
-
-        return response()->noContent(201);
-    }
-
-    public function destroy(AssignmentTariff $assignment_tariff)
-    {
-        Log::debug('AssignmentTariffController destroy', ['Tariff' => $assignment_tariff]);
-
-        // Проверяем, можно ли удалить тариф:
-        $serviceAssignmentExists = ServiceAssignment::where('id', $assignment_tariff->assignment_id)->exists();
-
-        Log::debug('AssignmentTariffController destroy', ['serviceExists' => $serviceAssignmentExists]);
-
-        // Проверяем активен ли тариф
-        $isActive = Carbon::parse($assignment_tariff->start_date)->lte(Carbon::today()) &&
-            (!$assignment_tariff->end_date || Carbon::parse($assignment_tariff->end_date)->gte(Carbon::today()));
-
-        Log::debug('AssignmentTariffController destroy', ['isActive' => $isActive]);
-
-        if ($serviceAssignmentExists && $isActive) {
+        // Запрещаем редактирование устаревших тарифов
+        if ($this->isTariffExpired($assignment_tariff)) {
             return response()->json(
-                ['message' => 'Нельзя удалить активный тариф'],
+                ['message' => 'Нельзя редактировать устаревший тариф'],
                 Response::HTTP_BAD_REQUEST
             );
         }
 
-        $assignment_tariff->delete();
+        // Проверяем, активна ли родительская услуга
+        $serviceAssignment = ServiceAssignment::find($assignment_tariff->assignment_id);
+        if (!$serviceAssignment || !$serviceAssignment->is_active) {
+            return response()->json(
+                ['message' => 'Нельзя редактировать тариф неактивной услуги'],
+                Response::HTTP_BAD_REQUEST
+            );
+        }
 
-        Log::info('AssignmentTariffController destroy', ['Tariff' => $assignment_tariff]);
+        // Валидация входных данных
+        $validated = $request->validate([
+            'rate' => 'required|numeric|min:0',
+            'start_date' => 'required|date',
+            'end_date' => 'nullable|date|after:start_date'
+        ]);
 
-        return response()->noContent(204);
+        // Обновляем текущий тариф
+        $assignment_tariff->update($validated);
+
+        // Загружаем обновленные данные услуги с отношениями
+        $serviceAssignment->load('tariff', 'apartment');
+
+        $formattedAssignment = $this->formatAssignment($serviceAssignment);
+
+        Log::info('AssignmentTariffController update', ['tariff' => $assignment_tariff]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Тариф успешно обновлен',
+            'data' => $formattedAssignment
+        ], 200);
+    }
+
+
+
+    public function destroy(AssignmentTariff $assignment_tariff)
+    {
+        // Запрещаем удаление тарифов для сохранения истории
+        return response()->json(
+            ['message' => 'Удаление тарифов запрещено'],
+            Response::HTTP_METHOD_NOT_ALLOWED
+        );
+    }
+
+    /**
+     * Проверяет, устарел ли тариф
+     */
+    private function isTariffExpired(AssignmentTariff $tariff): bool
+    {
+        $today = Carbon::today();
+
+        // Если есть дата окончания и она в прошлом - тариф устарел
+        if ($tariff->end_date && Carbon::parse($tariff->end_date)->lt($today)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private function formatAssignment($assignment)
+    {
+        $data = $assignment->toArray();
+
+        if ($assignment->scope === 'apartment' && $assignment->apartment) {
+            $data['apartment_number'] = $assignment->apartment->number;
+        }
+
+        return $data;
     }
 }
