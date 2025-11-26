@@ -1,38 +1,19 @@
 import React from "react";
-import { Button, Typography, Tooltip, Box } from "@mui/material";
+import {
+    Button,
+    Typography,
+    Tooltip,
+    Box,
+    LinearProgress,
+} from "@mui/material";
+import {
+    getTariffServiceNameStyle,
+    getTariffRateStyle,
+} from "../ui/StatusHelper";
 import { DataGrid } from "@mui/x-data-grid";
 
-const TariffsTable = ({ tariffs, onEdit, onDelete }) => {
-    // Подготавливаем данные с дополнительным полем для фильтрации
-    const processedTariffs = tariffs.map((tariff) => {
-        const status = tariff.status;
-        const isServiceActive = tariff.service_is_active;
 
-        let statusText;
-        if (!isServiceActive) {
-            statusText = "Отключен";
-        } else {
-            switch (status) {
-                case "current":
-                    statusText = "Активен";
-                    break;
-                case "expired":
-                    statusText = "Архивный";
-                    break;
-                case "future":
-                    statusText = "Будущий";
-                    break;
-                default:
-                    statusText = "Неизвестно";
-            }
-        }
-
-        return {
-            ...tariff,
-            statusText,
-        };
-    });
-
+const TariffsTable = ({ tariffs, onEdit, onDelete, loading = false }) => {
     const columnsTariffs = [
         {
             field: "id",
@@ -51,11 +32,69 @@ const TariffsTable = ({ tariffs, onEdit, onDelete }) => {
             headerName: "Наименование услуги",
             flex: 1,
             minWidth: 200,
+            renderCell: (params) => {
+                const displayInfo = getTariffServiceNameStyle(
+                    params.row.service_is_active,
+                    params.row.is_service_deleted
+                );
+
+                return (
+                    <Tooltip title={displayInfo.tooltip}>
+                        <Box
+                            sx={{
+                                width: "100%",
+                                height: "100%",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "flex-start",
+                            }}
+                        >
+                            <Typography
+                                variant="body2"
+                                sx={{
+                                    color: displayInfo.color,
+                                    fontStyle: displayInfo.fontStyle,
+                                }}
+                            >
+                                {params.value}
+                            </Typography>
+                        </Box>
+                    </Tooltip>
+                );
+            },
         },
         {
             field: "formatted_rate",
             headerName: "Тариф",
             width: 150,
+            renderCell: (params) => {
+                const displayInfo = getTariffRateStyle(
+                    params.row.service_is_active,
+                    params.row.is_service_deleted
+                );
+
+                return (
+                    <Box
+                        sx={{
+                            width: "100%",
+                            height: "100%",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "flex-start",
+                        }}
+                    >
+                        <Typography
+                            variant="body2"
+                            sx={{
+                                color: displayInfo.color,
+                                fontStyle: displayInfo.fontStyle,
+                            }}
+                        >
+                            {params.value}
+                        </Typography>
+                    </Box>
+                );
+            },
         },
         {
             field: "formatted_start_date",
@@ -68,68 +107,36 @@ const TariffsTable = ({ tariffs, onEdit, onDelete }) => {
             width: 150,
         },
         {
-            field: "statusText",
+            field: "status_display",
             headerName: "Статус",
-            width: 120,
+            minWidth: 150,
             sortable: true,
-            renderCell: (params) => {
-                const statusText = params.value;
-                const status = params.row.status;
-                const isServiceActive = params.row.service_is_active;
-
-                let color;
-                let tooltipText;
-
-                if (!isServiceActive) {
-                    color = "warning.main";
-                    tooltipText = "Услуга отключена";
-                } else {
-                    switch (status) {
-                        case "current":
-                            color = "success.main";
-                            tooltipText = "Активный тариф";
-                            break;
-                        case "expired":
-                            color = "grey.400";
-                            tooltipText = "Тариф устарел";
-                            break;
-                        case "future":
-                            color = "info.main";
-                            tooltipText = "Тариф еще не вступил в силу";
-                            break;
-                        default:
-                            color = "grey.600";
-                            tooltipText = "Неизвестный статус";
-                    }
-                }
-
-                return (
-                    <Tooltip title={tooltipText}>
-                        <Box
-                            sx={{
-                                width: "100%",
-                                height: "100%",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "flex-start",
-                                gap: 1,
-                            }}
-                        >
+            renderCell: (params) => (
+                <Tooltip title={params.row.status_tooltip}>
+                    <Box
+                        sx={{
+                            width: "100%",
+                            height: "100%",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "flex-start",
+                            gap: 1,
+                        }}
+                    >
+                        {params.row.status_show_dot && (
                             <Box
                                 sx={{
                                     width: 12,
                                     height: 12,
                                     borderRadius: "50%",
-                                    bgcolor: color,
+                                    bgcolor: params.row.status_color,
                                 }}
                             />
-                            <Typography variant="body2">
-                                {statusText}
-                            </Typography>
-                        </Box>
-                    </Tooltip>
-                );
-            },
+                        )}
+                        <Typography variant="body2">{params.value}</Typography>
+                    </Box>
+                </Tooltip>
+            ),
         },
         {
             field: "actions",
@@ -211,8 +218,11 @@ const TariffsTable = ({ tariffs, onEdit, onDelete }) => {
                     ЖКУ
                 </Typography>
             </Typography>
+
+            {loading && <LinearProgress />}
+
             <DataGrid
-                rows={processedTariffs}
+                rows={tariffs}
                 columns={columnsTariffs}
                 pageSizeOptions={[10, 20, 50]}
                 initialState={{
@@ -225,6 +235,7 @@ const TariffsTable = ({ tariffs, onEdit, onDelete }) => {
                         showQuickFilter: true,
                     },
                 }}
+                loading={loading}
             />
         </>
     );

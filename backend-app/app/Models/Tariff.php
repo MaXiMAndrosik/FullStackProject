@@ -16,6 +16,7 @@ class Tariff extends Model
 
     protected $fillable = [
         'service_id',
+        'service_name',
         'rate',
         'unit',
         'start_date',

@@ -22,7 +22,7 @@ const TariffCalculatorDialog = ({
     service,
     apartments,
     onSubmit,
-    initialStartDate = "",
+    startDate,
 }) => {
     const [totalCost, setTotalCost] = useState("");
     const [consumption, setConsumption] = useState("");
@@ -33,16 +33,6 @@ const TariffCalculatorDialog = ({
     // Добавляем состояния для рассрочки
     const [installmentOption, setInstallmentOption] = useState("off");
     const [installmentMonths, setInstallmentMonths] = useState(1);
-    const [startDate, setStartDate] = useState(
-        initialStartDate || format(new Date(), "yyyy-MM-dd")
-    );
-
-    // Обновляем startDate при изменении initialStartDate
-    useEffect(() => {
-        if (initialStartDate) {
-            setStartDate(initialStartDate);
-        }
-    }, [initialStartDate]);
 
     // Сброс состояния при открытии/закрытии диалога
     useEffect(() => {
@@ -280,11 +270,12 @@ const TariffCalculatorDialog = ({
                     label="Дата начала тарифа"
                     type="date"
                     value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
                     fullWidth
                     margin="normal"
                     required
+                    disabled={true}
                     InputLabelProps={{ shrink: true }}
+                    helperText={"Дата начала не может быть изменена"}
                 />
 
                 <StyledTextArea

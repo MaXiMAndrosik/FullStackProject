@@ -255,10 +255,10 @@ class TariffController extends Controller
 
                 // Обработка изменений end_date согласно требованиям
                 if ($endDateWasSet) {
-                    // Требование 6: установка end_date - создать новый тариф
+                    // Установка end_date - создать новый тариф
                     $this->tariffService->createNextTariff($tariff, $newEndDate);
                 } elseif ($endDateChanged && $newEndDate) {
-                    // Требование 7: изменение end_date - обновить следующий тариф
+                    // Изменение end_date - обновить следующий тариф
                     $this->tariffService->handleEndDateChange($tariff, $newEndDate);
                 }
 
@@ -276,10 +276,12 @@ class TariffController extends Controller
                 ]);
             });
 
+            $service = Service::with('tariffs', 'meterTypes')->find($tariff->service_id);
+
             return response()->json([
                 'success' => true,
                 'message' => 'Тариф успешно обновлен.',
-                'data' => new TariffResource($tariff->fresh())
+                'data' => $service
             ], Response::HTTP_OK);
         } catch (\Exception $e) {
             Log::error('Tariff update failed: ' . $e->getMessage(), [
@@ -310,14 +312,15 @@ class TariffController extends Controller
             }
 
             // Проверяем, не является ли тариф единственным для услуги
-            $tariffCount = Tariff::where('service_id', $tariff->service_id)->count();
-            if ($tariffCount <= 1) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Нельзя удалить единственный тариф услуги.'
-                ], Response::HTTP_BAD_REQUEST);
-            }
+            // $tariffCount = Tariff::where('service_id', $tariff->service_id)->count();
+            // if ($tariffCount <= 1) {
+            //     return response()->json([
+            //         'success' => false,
+            //         'message' => 'Нельзя удалить единственный тариф услуги.'
+            //     ], Response::HTTP_BAD_REQUEST);
+            // }
 
+            $serviceId = $tariff->service_id;
             $tariff->delete();
 
             Log::info('Archived tariff deleted', [
@@ -327,10 +330,13 @@ class TariffController extends Controller
                 'end_date' => $tariff->end_date
             ]);
 
+            $service = Service::with('tariffs', 'meterTypes')->find($serviceId);
+
             return response()->json([
                 'success' => true,
-                'message' => 'Архивный тариф успешно удален.'
-            ], Response::HTTP_NO_CONTENT);
+                'message' => 'Архивный тариф успешно удален.',
+                'data' => $service
+            ], Response::HTTP_OK);
         } catch (\Exception $e) {
             Log::error('Tariff deletion failed: ' . $e->getMessage(), [
                 'tariff_id' => $tariff->id,
@@ -347,31 +353,55 @@ class TariffController extends Controller
     /**
      * Получить архивные тарифы для услуги
      */
-    public function expired(Request $request)
+    // public function expired(Request $request)
+    // {
+    //     try {
+    //         $validator = Validator::make($request->all(), [
+    //             'service_id' => 'required|exists:services,id'
+    //         ]);
+
+    //         if ($validator->fails()) {
+    //             return response()->json([
+    //                 'success' => false,
+    //                 'message' => 'Ошибка валидации.',
+    //                 'errors' => $validator->errors()
+    //             ], Response::HTTP_UNPROCESSABLE_ENTITY);
+    //         }
+
+    //         $serviceId = $request->service_id;
+    //         $expiredTariffs = $this->tariffService->getExpiredTariffs($serviceId);
+
+    //         return response()->json([
+    //             'success' => true,
+    //             'message' => 'Архивные тарифы загружены.',
+    //             'data' => TariffResource::collection($expiredTariffs)
+    //         ], Response::HTTP_OK);
+    //     } catch (\Exception $e) {
+    //         Log::error('Failed to fetch expired tariffs: ' . $e->getMessage());
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Ошибка при загрузке архивных тарифов.'
+    //         ], Response::HTTP_INTERNAL_SERVER_ERROR);
+    //     }
+    // }
+
+    /**
+     * Получить архивные тарифы (от удаленных услуг)
+     */
+    public function oldTariffs(Request $request)
     {
         try {
-            $validator = Validator::make($request->all(), [
-                'service_id' => 'required|exists:services,id'
-            ]);
-
-            if ($validator->fails()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Ошибка валидации.',
-                    'errors' => $validator->errors()
-                ], Response::HTTP_UNPROCESSABLE_ENTITY);
-            }
-
-            $serviceId = $request->service_id;
-            $expiredTariffs = $this->tariffService->getExpiredTariffs($serviceId);
+            $oldTariffs = Tariff::whereNull('service_id')
+                ->orderBy('created_at', 'desc')
+                ->get();
 
             return response()->json([
                 'success' => true,
                 'message' => 'Архивные тарифы загружены.',
-                'data' => TariffResource::collection($expiredTariffs)
+                'data' => TariffResource::collection($oldTariffs)
             ], Response::HTTP_OK);
         } catch (\Exception $e) {
-            Log::error('Failed to fetch expired tariffs: ' . $e->getMessage());
+            Log::error('Failed to fetch old tariffs: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Ошибка при загрузке архивных тарифов.'

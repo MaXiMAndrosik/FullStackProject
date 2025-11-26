@@ -4,6 +4,9 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Resources\Json\JsonResource;
 use Carbon\Carbon;
+use App\Services\TariffStatusService;
+use App\Services\BillingPeriodService;
+use App\Helpers\FormatHelper;
 
 class TariffResource extends JsonResource
 {
@@ -13,24 +16,29 @@ class TariffResource extends JsonResource
         $startDate = Carbon::parse($this->start_date);
         $endDate = $this->end_date ? Carbon::parse($this->end_date) : null;
 
-        // Определяем статус тарифа с учетом активности услуги
-        $status = 'current';
-        $serviceIsActive = $this->service->is_active ?? false;
+        // Определяем базовые параметры
+        $isServiceDeleted = is_null($this->service_id);
 
-        if (!$serviceIsActive) {
-            $status = 'disabled';
-        } elseif ($today->lt($startDate)) {
-            $status = 'future';
-        } elseif ($endDate && $today->gt($endDate)) {
+        // Для архивных тарифов используем сохраненные данные
+        if ($isServiceDeleted) {
+            $serviceName = $this->service_name ?? 'Удаленная услуга';
+            $serviceIsActive = false;
             $status = 'expired';
+        } else {
+            $serviceName = $this->service->name ?? 'Неизвестная услуга';
+            $serviceIsActive = $this->service->is_active ?? false;
+
+            $status = $this->getTariffStatus();
         }
+
+        $formattedRate = FormatHelper::formatTariff($this->rate, $this->unit);
 
         return [
             'id' => $this->id,
             'service_id' => $this->service_id,
-            'service_name' => $this->service->name ?? 'Неизвестная услуга',
+            'service_name' => $serviceName,
             'rate' => $this->rate,
-            'formatted_rate' => number_format($this->rate, 2) . ' ' . $this->getUnitLabel($this->unit),
+            'formatted_rate' => $formattedRate,
             'unit' => $this->unit,
             'start_date' => $this->start_date,
             'formatted_start_date' => $startDate->format('d.m.Y'),
@@ -39,21 +47,27 @@ class TariffResource extends JsonResource
             'is_current' => $status === 'current',
             'status' => $status,
             'service_is_active' => $serviceIsActive,
+            'is_service_deleted' => $isServiceDeleted,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];
     }
 
-    private function getUnitLabel($unit)
+    /**
+     * Определяет статус тарифа с использованием бизнес-логики
+     */
+    protected function getTariffStatus(): string
     {
-        $units = [
-            'm2' => 'руб/м²',
-            'm3' => 'руб/м³',
-            'gcal' => 'руб/Гкал',
-            'kwh' => 'руб/кВт·ч',
-            'fixed' => 'руб',
-        ];
+        // Если услуга не активна - тариф отключен
+        if (!$this->service->is_active) {
+            return 'disabled';
+        }
 
-        return $units[$unit] ?? $unit;
+        // Используем бизнес-логику для активных услуг
+        $billingPeriodService = new BillingPeriodService();
+        $tariffStatusService = new TariffStatusService($billingPeriodService);
+
+        return $tariffStatusService->getStatus($this->resource);
     }
+
 }

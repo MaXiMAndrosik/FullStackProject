@@ -101,6 +101,7 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
         // Создание, удаление и редактирование сервисов ЖКУ и тарифов к ним
         Route::apiResource('/admin/services', ServiceController::class)->except(['show']);
         Route::put('/admin/services/{service}/toggle-active', [ServiceController::class, 'toggleActive']);
+        Route::get('/admin/tariffs/old', [TariffController::class, 'oldTariffs']);
         Route::apiResource('/admin/tariffs', TariffController::class);
 
         // Создание, удаление и редактирование сервисов отдельных услуг и тарифов к ним

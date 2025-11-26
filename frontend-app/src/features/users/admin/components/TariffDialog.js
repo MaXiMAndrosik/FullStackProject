@@ -105,7 +105,13 @@ const TariffDialog = ({
                             fullWidth
                             margin="normal"
                             required
+                            disabled={!!currentTariff}
                             InputLabelProps={{ shrink: true }}
+                            helperText={
+                                currentTariff
+                                    ? "Дата начала не может быть изменена"
+                                    : ""
+                            }
                         />
 
                         <StyledTextArea
@@ -154,7 +160,7 @@ const TariffDialog = ({
                     service={service}
                     apartments={apartments}
                     onSubmit={handleApplyCalculatedTariff}
-                    initialStartDate={startDate}
+                    startDate={startDate}
                 />
             )}
         </>

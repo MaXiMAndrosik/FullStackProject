@@ -152,7 +152,7 @@ class ServiceAssignmentController extends Controller
         // Если пытаемся активировать услугу без активного тарифа - запрещаем
         if (!$service_assignment->is_active && !$hasActiveTariff) {
             return response()->json(
-                ['message' => 'Нельзя активировать услугу без активного тарифа'],
+                ['message' => 'Услуга архивная. Создайте новую услугу'],
                 Response::HTTP_BAD_REQUEST
             );
         }

@@ -28,6 +28,7 @@ const ServiceDialog = ({
     const [selectedMeterTypes, setSelectedMeterTypes] = useState([]);
     const [isCalculationTypeChanged, setIsCalculationTypeChanged] =
         useState(false);
+    const [tariffStartDate, setTariffStartDate] = useState("");
 
     // Инициализация выбранных типов счетчиков при изменении currentService
     useEffect(() => {
@@ -39,7 +40,8 @@ const ServiceDialog = ({
         } else {
             setSelectedMeterTypes([]);
         }
-
+        // Сбрасываем дату при открытии диалога
+        setTariffStartDate("");
         // Сбрасываем флаг изменения типа расчета при открытии диалога
         setIsCalculationTypeChanged(false);
     }, [currentService, open]);
@@ -78,6 +80,11 @@ const ServiceDialog = ({
             data.meter_type_ids = [];
         }
 
+        // Добавляем данные тарифа при создании услуги
+        if (!currentService) {
+            data.tariff_start_date = tariffStartDate;
+        }
+
         // Преобразуем boolean значения
         data.is_active = data.is_active === "on";
 
@@ -94,6 +101,18 @@ const ServiceDialog = ({
             m2: "м²",
         };
         return unitLabels[unit] || unit;
+    };
+
+    // Функция для подсказки
+    const getDateHelperText = () => {
+        const today = new Date();
+        const day = today.getDate();
+
+        if (day <= 15) {
+            return "До 15 числа: можно установить дату в прошлом, текущем или будущих месяцах (только 1 число месяца)";
+        } else {
+            return "После 15 числа: можно установить дату в текущем или будущих месяцах (только 1 число месяца)";
+        }
     };
 
     // Определяем, нужно ли показывать выбор счетчиков
@@ -166,6 +185,21 @@ const ServiceDialog = ({
                                 required
                                 inputProps={{ maxLength: 30 }}
                                 helperText="Уникальный код услуги (макс. 30 символов)"
+                            />
+
+                            <StyledTextArea
+                                name="tariff_start_date"
+                                label="Дата начала действия тарифа"
+                                type="date"
+                                value={tariffStartDate}
+                                onChange={(e) =>
+                                    setTariffStartDate(e.target.value)
+                                }
+                                fullWidth
+                                margin="normal"
+                                required
+                                InputLabelProps={{ shrink: true }}
+                                helperText={getDateHelperText()}
                             />
                         </>
                     )}

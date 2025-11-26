@@ -8,6 +8,8 @@ use App\Models\Tariff;
 use App\Models\Meter;
 use App\Models\MeterType;
 use App\Services\TariffService;
+use App\Services\BillingPeriodService;
+use App\Services\TariffStatusService;
 use App\Http\Resources\ServiceResource;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -20,10 +22,17 @@ use Illuminate\Support\Facades\Validator;
 class ServiceController extends Controller
 {
     protected $tariffService;
+    protected $billingPeriodService;
+    protected $tariffStatusService;
 
-    public function __construct(TariffService $tariffService)
-    {
+    public function __construct(
+        TariffService $tariffService,
+        BillingPeriodService $billingPeriodService,
+        TariffStatusService $tariffStatusService
+    ) {
         $this->tariffService = $tariffService;
+        $this->billingPeriodService = $billingPeriodService;
+        $this->tariffStatusService = $tariffStatusService;
     }
 
     public function index()
@@ -43,22 +52,63 @@ class ServiceController extends Controller
                 'calculation_type' => ['required', Rule::in(['fixed', 'meter', 'area'])],
                 'meter_type_ids' => 'required_if:calculation_type,meter|array',
                 'meter_type_ids.*' => 'exists:meter_types,id',
-                'is_active' => 'sometimes|boolean'
+                'is_active' => 'sometimes|boolean',
+                'tariff_start_date' => [
+                    'required',
+                    'date',
+                    function ($attribute, $value, $fail) {
+                        // Проверяем, что дата - первое число месяца
+                        if (!$this->billingPeriodService->validateStartDate($value)) {
+                            $fail('Дата начала должна быть первым числом месяца (например: 01.01.2025).');
+                            return;
+                        }
+
+                        // Получаем допустимые даты
+                        $allowedDates = $this->billingPeriodService->getAllowedStartDates();
+                        if (!in_array($value, $allowedDates)) {
+                            $period = $this->billingPeriodService->getEditingPeriod();
+                            $examples = $this->billingPeriodService->getDateExamples();
+                            $exampleString = implode(', ', $examples);
+
+                            if ($period['is_before_15th']) {
+                                $fail("До 15 числа можно установить дату начала в прошлом, текущем или будущих месяцах. Примеры допустимых дат: {$exampleString}");
+                            } else {
+                                $fail("После 15 числа можно установить дату начала в текущем или будущих месяцах. Примеры допустимых дат: {$exampleString}");
+                            }
+                        }
+                    }
+                ],
             ], [
-                'code.required' => 'Код услуги обязателен для заполнения.',
-                'code.unique' => 'Услуга с таким кодом уже существует.',
-                'name.required' => 'Название услуги обязательно для заполнения.',
-                'calculation_type.required' => 'Тип расчета обязателен для выбора.',
-                'meter_type_ids.required_if' => 'Для услуг по счетчикам необходимо выбрать типы счетчиков.',
-                'meter_type_ids.*.exists' => 'Выбран несуществующий тип счетчика.'
+                'code.required' => 'Поле "Код услуги" обязательно для заполнения.',
+                'code.unique' => 'Услуга с таким кодом уже существует. Пожалуйста, используйте другой код.',
+                'code.string' => 'Код услуги должен быть строкой.',
+                'code.max' => 'Код услуги не может превышать 30 символов.',
+
+                'name.required' => 'Поле "Название услуги" обязательно для заполнения.',
+                'name.string' => 'Название услуги должно быть строкой.',
+                'name.max' => 'Название услуги не может превышать 100 символов.',
+
+                'type.required' => 'Поле "Тип услуги" обязательно для выбора.',
+                'type.string' => 'Тип услуги должен быть строкой.',
+                'type.max' => 'Тип услуги не может превышать 20 символов.',
+
+                'description.string' => 'Описание должно быть текстом.',
+
+                'calculation_type.required' => 'Поле "Тип расчета" обязательно для выбора.',
+                'calculation_type.in' => 'Выбран недопустимый тип расчета. Допустимые значения: фиксированный, по счетчику, по площади.',
+
+                'meter_type_ids.required_if' => 'Для услуг по счетчикам необходимо выбрать хотя бы один тип счетчика.',
+                'meter_type_ids.array' => 'Типы счетчиков должны быть переданы в виде массива.',
+                'meter_type_ids.*.exists' => 'Выбран несуществующий тип счетчика.',
+
+                'is_active.boolean' => 'Поле "Активна" должно быть логическим значением.',
+
+                'tariff_start_date.required' => 'Поле "Дата начала тарифа" обязательно для заполнения.',
+                'tariff_start_date.date' => 'Дата начала должна быть корректной датой в формате ДД.ММ.ГГГГ.',
             ]);
 
             if ($validator->fails()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Ошибка валидации данных при создании услуги.',
-                    'errors' => $validator->errors()
-                ], Response::HTTP_UNPROCESSABLE_ENTITY);
+                return $this->handleValidationErrors($validator, 'создать услугу');
             }
 
             $validated = $validator->validated();
@@ -79,9 +129,11 @@ class ServiceController extends Controller
 
                 Tariff::create([
                     'service_id' => $service->id,
+                    'service_name'
+                    => $service->name,
                     'rate' => 0.0000,
                     'unit' => $unit,
-                    'start_date' => Carbon::today(),
+                    'start_date' => $validated['tariff_start_date'],
                     'end_date' => null,
                 ]);
 
@@ -92,6 +144,7 @@ class ServiceController extends Controller
 
             Log::info('Service created successfully', [
                 'service_id' => $service->id,
+                'service_name' => $service->name,
                 'code' => $service->code
             ]);
 
@@ -131,11 +184,7 @@ class ServiceController extends Controller
             ]);
 
             if ($validator->fails()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Ошибка валидации данных при обновлении услуги.',
-                    'errors' => $validator->errors()
-                ], Response::HTTP_UNPROCESSABLE_ENTITY);
+                return $this->handleValidationErrors($validator, 'обновить услугу');
             }
 
             $validated = $validator->validated();
@@ -164,11 +213,11 @@ class ServiceController extends Controller
                     $newMeterTypeIds
                 );
 
+                // Обрабатываем изменение типа расчета с новой логикой
                 if (
                     isset($validated['calculation_type']) &&
                     $validated['calculation_type'] !== $originalCalculationType
                 ) {
-
                     $this->handleCalculationTypeChange($service, $validated);
                 }
             });
@@ -177,7 +226,7 @@ class ServiceController extends Controller
 
             Log::info('Service updated successfully', [
                 'service_id' => $service->id,
-                'code' => $service->code
+                'code' => $service->code,
             ]);
 
             return response()->json([
@@ -202,19 +251,69 @@ class ServiceController extends Controller
     public function destroy(Service $service)
     {
         try {
-            // Проверяем, есть ли связанные данные которые могут блокировать удаление
-            $tariffsCount = $service->tariffs()->count();
-            $hasActiveTariffs = $service->tariffs()->whereNull('end_date')->exists();
-
-            if ($hasActiveTariffs) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Невозможно удалить услугу с активными тарифами. Сначала закройте все активные тарифы.'
-                ], Response::HTTP_BAD_REQUEST);
-            }
-
             DB::transaction(function () use ($service) {
-                $service->tariffs()->delete();
+
+                $period = $this->billingPeriodService->getEditingPeriod();
+
+                $tariffs = $service->tariffs;
+
+                // 1. Удаляем будущие тарифы
+                $futureTariffs = $tariffs->filter(function ($tariff) {
+                    return $this->tariffStatusService->getStatus($tariff) === 'future';
+                });
+                foreach ($futureTariffs as $tariff) {
+                    $tariff->delete();
+                }
+
+                // 2. Обрабатываем активные тарифы
+                $currentTariffs = $tariffs->filter(function ($tariff) {
+                    return $this->tariffStatusService->getStatus($tariff) === 'current';
+                });
+
+                foreach ($currentTariffs as $tariff) {
+                    $startDate = Carbon::parse($tariff->start_date);
+
+                    if ($period['is_before_15th']) {
+                        // До 15 числа
+                        if ($startDate->equalTo($period['active_start'])) {
+                            $tariff->delete();
+                            Log::info('Active tariff deleted (before 15th)', [
+                                'tariff_id' => $tariff->id,
+                                'start_date' => $tariff->start_date,
+                                'active_start' => $period['active_start']->format('Y-m-d')
+                            ]);
+                        } else {
+                            $tariff->update(['end_date' => $period['two_months_ago_end']]);
+                            Log::info('Active tariff ended (before 15th)', [
+                                'tariff_id' => $tariff->id,
+                                'start_date' => $tariff->start_date,
+                                'end_date' => $period['two_months_ago_end']->format('Y-m-d')
+                            ]);
+                        }
+                    } else {
+                        // После 15 числа
+                        if ($startDate->equalTo($period['active_start'])) {
+                            $tariff->delete();
+                            Log::info('Active tariff deleted (after 15th)', [
+                                'tariff_id' => $tariff->id,
+                                'start_date' => $tariff->start_date,
+                                'active_start' => $period['active_start']->format('Y-m-d')
+                            ]);
+                        } else {
+                            $tariff->update(['end_date' => $period['previous_month_end']]);
+                            Log::info('Active tariff ended (after 15th)', [
+                                'tariff_id' => $tariff->id,
+                                'start_date' => $tariff->start_date,
+                                'end_date' => $period['previous_month_end']->format('Y-m-d')
+                            ]);
+                        }
+                    }
+                }
+
+                // 3. Удаляем тарифы с rate=0.0000
+                $service->tariffs()->where('rate', 0.0000)->delete();
+
+                // 4. Отвязываем типы счетчиков и удаляем услугу
                 $service->meterTypes()->detach();
                 $service->delete();
             });
@@ -228,7 +327,6 @@ class ServiceController extends Controller
                 'success' => true,
                 'message' => 'Услуга успешно удалена.'
             ], Response::HTTP_OK);
-
         } catch (\Exception $e) {
             Log::error('Service deletion failed: ' . $e->getMessage(), [
                 'service_id' => $service->id,
@@ -259,7 +357,11 @@ class ServiceController extends Controller
         });
 
         $service->load(['meterTypes', 'tariffs']);
-        return new ServiceResource($service);
+        return response()->json([
+            'success' => true,
+            'message' => 'Статус услуги изменен',
+            'data' => new ServiceResource($service)
+        ]);
     }
 
     public function show(Request $request)
@@ -278,7 +380,6 @@ class ServiceController extends Controller
                 'success' => true,
                 'data' => ServiceResource::collection($services)
             ], Response::HTTP_OK);
-            
         } catch (\Exception $e) {
             Log::error('ServiceController show error: ' . $e->getMessage());
             return response()->json([
@@ -286,6 +387,24 @@ class ServiceController extends Controller
                 'message' => 'Ошибка при получении услуг'
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
+    }
+
+    protected function handleValidationErrors($validator, $action = 'выполнить операцию')
+    {
+        $errorMessages = [];
+        foreach ($validator->errors()->toArray() as $field => $errors) {
+            foreach ($errors as $error) {
+                $errorMessages[] = $error;
+            }
+        }
+
+        $detailedMessage = implode(' ', $errorMessages);
+
+        return response()->json([
+            'success' => false,
+            'message' => "Не удалось {$action}. {$detailedMessage}",
+            'errors' => $validator->errors()
+        ], Response::HTTP_UNPROCESSABLE_ENTITY);
     }
 
     protected function getUnitForService($calculationType, array $meterTypeIds = []): string
@@ -334,34 +453,152 @@ class ServiceController extends Controller
         }
     }
 
-    protected function handleCalculationTypeChange($service, $validated)
+    protected function handleCalculationTypeChange(Service $service, array $validated)
     {
-        $activeTariff = $this->tariffService->getActiveTariff($service->id);
-        if ($activeTariff) {
-            // Закрываем старый тариф вчерашним днем
-            $activeTariff->update(['end_date' => Carbon::yesterday()]);
+        $period = $this->billingPeriodService->getEditingPeriod();
+        $newUnit = $this->getUnitForService(
+            $validated['calculation_type'],
+            $validated['meter_type_ids'] ?? []
+        );
 
-            // Создаем новый тариф с rate=0.0000
-            $newUnit = $this->getUnitForService(
-                $validated['calculation_type'],
-                $validated['meter_type_ids'] ?? []
-            );
+        // Получаем ВСЕ тарифы услуги
+        $tariffs = $service->tariffs;
 
-            Tariff::create([
-                'service_id' => $service->id,
-                'rate' => 0.0000, // Требование 3: rate=0.0000
-                'unit' => $newUnit,
-                'start_date' => Carbon::today(), // Начинается сегодня
-                'end_date' => null
-            ]);
+        if ($tariffs->isEmpty()) {
+            // Если нет тарифов, создаем новый
+            $this->createNewTariff($service, $newUnit, $period);
+            return;
+        }
 
-            Log::info('Service calculation type changed - new tariff created', [
-                'service_id' => $service->id,
-                'old_calculation_type' => $service->calculation_type,
-                'new_calculation_type' => $validated['calculation_type'],
+        // 1. Обрабатываем ВСЕ будущие тарифы
+        $this->handleFutureTariffs($tariffs, $newUnit);
+
+        // 2. Обрабатываем активные тарифы
+        $this->handleCurrentTariffs($service, $tariffs, $newUnit, $period);
+    }
+
+    /**
+     * Обработка ВСЕХ будущих тарифов
+     */
+    protected function handleFutureTariffs($tariffs, $newUnit)
+    {
+        $futureTariffs = $tariffs->filter(function ($tariff) {
+            return $this->tariffStatusService->getStatus($tariff) === 'future';
+        });
+
+        foreach ($futureTariffs as $tariff) {
+            $tariff->update(['unit' => $newUnit]);
+
+            Log::info('Future tariff unit updated during calculation type change', [
+                'tariff_id' => $tariff->id,
+                'old_unit' => $tariff->getOriginal('unit'),
                 'new_unit' => $newUnit,
-                'rate' => 0.0000
+                'start_date' => $tariff->start_date
             ]);
         }
+    }
+
+    /**
+     * Обработка активных тарифов
+     */
+    protected function handleCurrentTariffs(Service $service, $tariffs, $newUnit, $period)
+    {
+        $currentTariffs = $tariffs->filter(function ($tariff) {
+            return $this->tariffStatusService->getStatus($tariff) === 'current';
+        });
+
+        foreach ($currentTariffs as $tariff) {
+            $startDate = Carbon::parse($tariff->start_date);
+
+            if ($period['is_before_15th']) {
+                $this->handleBefore15th($service, $tariff, $startDate, $newUnit, $period);
+            } else {
+                $this->handleAfter15th($service, $tariff, $startDate, $newUnit, $period);
+            }
+        }
+    }
+
+    /**
+     * Обработка до 15 числа
+     */
+    protected function handleBefore15th(Service $service, $tariff, $startDate, $newUnit, $period)
+    {
+        if ($startDate->equalTo($period['active_start'])) {
+            // start_date = 1 число предыдущего месяца - обновляем unit
+            $tariff->update(['unit' => $newUnit]);
+
+            Log::info('Current tariff unit updated (before 15th)', [
+                'tariff_id' => $tariff->id,
+                'start_date' => $tariff->start_date,
+                'active_start' => $period['active_start']->format('Y-m-d'),
+                'new_unit' => $newUnit
+            ]);
+        } else {
+            // start_date < 1 число предыдущего месяца - устанавливаем end_date и создаем новый
+            $tariff->update(['end_date' => $period['two_months_ago_end']]);
+
+            $this->createNewTariff($service, $newUnit, $period);
+
+            Log::info('Current tariff ended and new created (before 15th)', [
+                'old_tariff_id' => $tariff->id,
+                'end_date' => $period['two_months_ago_end']->format('Y-m-d'),
+                'new_start_date' => $period['active_start']->format('Y-m-d'),
+                'new_unit' => $newUnit
+            ]);
+        }
+    }
+
+    /**
+     * Обработка после 15 числа
+     */
+    protected function handleAfter15th(Service $service, $tariff, $startDate, $newUnit, $period)
+    {
+        if ($startDate->equalTo($period['active_start'])) {
+            // start_date = 1 число текущего месяца - обновляем unit
+            $tariff->update(['unit' => $newUnit]);
+
+            Log::info('Current tariff unit updated (after 15th)', [
+                'tariff_id' => $tariff->id,
+                'start_date' => $tariff->start_date,
+                'active_start' => $period['active_start']->format('Y-m-d'),
+                'new_unit' => $newUnit
+            ]);
+        } else {
+            // start_date < 1 число текущего месяца - устанавливаем end_date и создаем новый
+            $tariff->update(['end_date' => $period['previous_month_end']]);
+
+            $this->createNewTariff($service, $newUnit, $period);
+
+            Log::info('Current tariff ended and new created (after 15th)', [
+                'old_tariff_id' => $tariff->id,
+                'end_date' => $period['previous_month_end']->format('Y-m-d'),
+                'new_start_date' => $period['active_start']->format('Y-m-d'),
+                'new_unit' => $newUnit
+            ]);
+        }
+    }
+
+    /**
+     * Создание нового тарифа
+     */
+    protected function createNewTariff(Service $service, $unit, $period)
+    {
+        $tariff = Tariff::create([
+            'service_id' => $service->id,
+            'service_name' => $service->name,
+            'rate' => 0.0000,
+            'unit' => $unit,
+            'start_date' => $period['active_start'],
+            'end_date' => null,
+        ]);
+
+        Log::info('New tariff created during calculation type change', [
+            'tariff_id' => $tariff->id,
+            'service_id' => $service->id,
+            'unit' => $unit,
+            'start_date' => $period['active_start']->format('Y-m-d')
+        ]);
+
+        return $tariff;
     }
 }

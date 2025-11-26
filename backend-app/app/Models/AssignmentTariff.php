@@ -10,6 +10,7 @@ class AssignmentTariff extends Model
 {
     protected $fillable = [
         'assignment_id',
+        'assignment_name',
         'rate',
         'unit',
         'start_date',

@@ -58,6 +58,8 @@ class TariffSeeder extends Seeder
 
             Tariff::create([
                 'service_id' => $service->id,
+                'service_name'
+                => $service->name,
                 'rate' => $rate,
                 'unit' => $unit,
                 'start_date' =>
@@ -70,6 +72,8 @@ class TariffSeeder extends Seeder
             if (in_array($service->code, ['water_supply', 'electricity', 'water_disposal', 'electricity'])) {
                 Tariff::create([
                     'service_id' => $service->id,
+                    'service_name'
+                    => $service->name,
                     'rate' => $rate * 0.9, // -10%
                     'unit' => $unit,
                     'start_date' => Carbon::create(2024, 1, 1),

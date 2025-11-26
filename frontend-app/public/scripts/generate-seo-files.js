@@ -63,7 +63,7 @@ Sitemap: ${siteUrl}/sitemap.xml
     <loc>${siteUrl}/services</loc>
     <lastmod>${buildDate}</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.9<priority>
+    <priority>0.9</priority>
   </url>
   <url>
     <loc>${siteUrl}/about</loc>

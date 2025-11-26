@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { Container, Box, CircularProgress } from "@mui/material";
+import { Container, Box, CircularProgress, Alert } from "@mui/material";
 import apiClient from "../../../app/api/client";
 import {
     showSuccess,
     showError,
 } from "../../../shared/services/notificationService";
+import { getTariffStatusDisplay } from "./ui/StatusHelper";
 import { format } from "date-fns";
 
 // Импортируем UI-компоненты диалогов
@@ -22,16 +23,19 @@ const AdminServicesPage = () => {
     const [currentService, setCurrentService] = useState(null);
     const [apartments, setApartments] = useState([]);
     const [meterTypes, setMeterTypes] = useState([]);
+    const [oldTariffs, setOldTariffs] = useState([]);
 
     // Добавляем состояния загрузки и ошибок
     const [loading, setLoading] = useState({
         services: false,
+        oldTariffs: false,
         apartments: false,
         meterTypes: false,
         action: false,
     });
     const [errors, setErrors] = useState({
         services: null,
+        oldTariffs: null,
         apartments: null,
         meterTypes: null,
     });
@@ -42,6 +46,7 @@ const AdminServicesPage = () => {
             try {
                 await Promise.all([
                     fetchServices(),
+                    fetchOldTariffs(),
                     fetchApartments(),
                     fetchMeterTypes(),
                 ]);
@@ -67,6 +72,23 @@ const AdminServicesPage = () => {
             setServices([]);
         } finally {
             setLoading((prev) => ({ ...prev, services: false }));
+        }
+    };
+
+    // Загружаем тарифы от удаленных услуг
+    const fetchOldTariffs = async () => {
+        setLoading((prev) => ({ ...prev, oldTariffs: true }));
+        setErrors((prev) => ({ ...prev, oldTariffs: null }));
+        try {
+            const res = await apiClient.get("/admin/tariffs/old"); // новый endpoint
+            setOldTariffs(res.data.data);
+        } catch (error) {
+            const errorMsg = "Ошибка загрузки архивных тарифов";
+            showError(errorMsg);
+            setErrors((prev) => ({ ...prev, oldTariffs: errorMsg }));
+            setOldTariffs([]);
+        } finally {
+            setLoading((prev) => ({ ...prev, oldTariffs: false }));
         }
     };
 
@@ -104,49 +126,40 @@ const AdminServicesPage = () => {
         }
     };
 
-    // Единицы измерения для тарифов на услуги
-    const unitLabels = {
-        m2: "руб/м²",
-        gcal: "руб/Гкал",
-        m3: "руб/м³",
-        kwh: "руб/кВт·ч",
-        fixed: "руб",
-    };
+    // // Единицы измерения для тарифов на услуги
+    // const unitLabels = {
+    //     m2: "руб/м²",
+    //     gcal: "руб/Гкал",
+    //     m3: "руб/м³",
+    //     kwh: "руб/кВт·ч",
+    //     fixed: "руб",
+    // };
 
-    // Функция для форматирования числа с удалением незначащих нулей
-    const formatRate = (value) => {
-        // Округляем до 4 знаков и удаляем незначащие нули
-        const formatted = parseFloat(value)
-            .toFixed(4)
-            .replace(/\.?0+$/, "");
-        // Если число целое - добавляем .0 для указания на десятичную дробь
-        return formatted.includes(".") ? formatted : `${formatted}.0`;
-    };
+    // // Функция для форматирования числа с удалением незначащих нулей
+    // const formatRate = (value) => {
+    //     // Округляем до 4 знаков и удаляем незначащие нули
+    //     const formatted = parseFloat(value)
+    //         .toFixed(4)
+    //         .replace(/\.?0+$/, "");
+    //     // Если число целое - добавляем .0 для указания на десятичную дробь
+    //     return formatted.includes(".") ? formatted : `${formatted}.0`;
+    // };
 
     // Получим все услуги отформатируем
     const processedServices = services.map((service) => {
-        let currentTariff = "Нет активного";
+        const currentTariffObj = service.current_tariff;
 
-        if (service.tariffs && Array.isArray(service.tariffs)) {
-            const today = new Date();
-            const activeTariff = service.tariffs.find((tariff) => {
-                const startDate = new Date(tariff.start_date);
-                const endDate = tariff.end_date
-                    ? new Date(tariff.end_date)
-                    : null;
-                return startDate <= today && (!endDate || endDate >= today);
-            });
+        let formattedRate = "Ожидается";
 
-            if (activeTariff) {
-                const formattedRate = formatRate(activeTariff.rate);
-                const unitLabel = unitLabels[activeTariff.unit] || "руб";
-                currentTariff = `${formattedRate} ${unitLabel}`;
-            }
+        if (currentTariffObj) {
+            formattedRate = currentTariffObj.formatted_rate;
         }
 
         return {
             ...service,
-            current_tariff: currentTariff,
+            current_tariff_obj: currentTariffObj,
+            current_tariff_display: formattedRate,
+            tariff_status: currentTariffObj?.status || "none",
         };
     });
 
@@ -164,8 +177,8 @@ const AdminServicesPage = () => {
     // Сохранение услуги
     const handleServiceSubmit = async (e) => {
         e.preventDefault();
+        setLoading((prev) => ({ ...prev, action: true }));
         const data = new FormData(e.target);
-        // const serviceData = Object.fromEntries(data.entries());
         const serviceData = {};
         // Обрабатываем все поля, кроме meter_type_ids
         for (let [key, value] of data.entries()) {
@@ -203,37 +216,80 @@ const AdminServicesPage = () => {
                     `/admin/services/${currentService.id}`,
                     serviceData
                 );
+                if (response.data.success) {
+                    const updatedService = response.data.data;
+                    setServices((prev) =>
+                        prev.map((item) =>
+                            item.id === updatedService.id
+                                ? updatedService
+                                : item
+                        )
+                    );
+                    showSuccess(response.data.message);
+                }
             } else {
                 response = await apiClient.post("/admin/services", serviceData);
+                if (response.data.success) {
+                    const newService = response.data.data;
+                    setServices((prev) => [...prev, newService]);
+                    showSuccess(response.data.message);
+                }
             }
-            showSuccess(response.data.message);
-            fetchServices();
             handleServiceClose();
         } catch (error) {
-            showError(error);
+            showError(
+                error.response?.data?.message || "Ошибка обработки услуги"
+            );
+        } finally {
+            setLoading((prev) => ({ ...prev, action: false }));
         }
     };
+
     // Переключение активности услуги
     const handleServiceToggle = async (id, isActive) => {
+        setLoading((prev) => ({ ...prev, action: true }));
         try {
-            await apiClient.put(`/admin/services/${id}/toggle-active`, {
-                is_active: !isActive,
-            });
-            showSuccess("Статус изменен");
-            fetchServices();
+            const response = await apiClient.put(
+                `/admin/services/${id}/toggle-active`,
+                {
+                    is_active: !isActive,
+                }
+            );
+
+            if (response.data.success) {
+                const updatedService = response.data.data;
+                setServices((prev) =>
+                    prev.map((item) =>
+                        item.id === updatedService.id ? updatedService : item
+                    )
+                );
+                showSuccess(response.data.message);
+            }
         } catch (error) {
-            showError("Ошибка переключения");
+            showError(error.response?.data?.message || "Ошибка переключения");
+        } finally {
+            setLoading((prev) => ({ ...prev, action: false }));
         }
     };
     // Удаление услуги
     const handleServiceDelete = async (id) => {
         if (window.confirm("Вы уверены, что хотите удалить эту услугу?")) {
+            setLoading((prev) => ({ ...prev, action: true }));
             try {
-                await apiClient.delete(`/admin/services/${id}`);
-                showSuccess("Услуга удалена");
-                fetchServices();
+                const response = await apiClient.delete(
+                    `/admin/services/${id}`
+                );
+
+                if (response.data.success) {
+                    setServices((prev) =>
+                        prev.filter((item) => item.id !== id)
+                    );
+                    showSuccess(response.data.message);
+                }
             } catch (error) {
-                showError("Ошибка удаления");
+                showError(error.response?.data?.message || "Ошибка удаления");
+            } finally {
+                setLoading((prev) => ({ ...prev, action: false }));
             }
         }
     };
@@ -244,32 +300,80 @@ const AdminServicesPage = () => {
         return dateString ? format(new Date(dateString), "dd.MM.yyyy") : "";
     };
     // Получим все тарифы из ответа сервера и отформатируем
-    const allTariffs = services.flatMap((service) =>
+    const processedTariffsFromServices = services.flatMap((service) =>
         (service.tariffs || []).map((tariff) => {
-            // Проверка и форматирование для каждого тарифа
-            const isCurrent = (() => {
-                const today = new Date();
-                const startDate = new Date(tariff.start_date);
-                const endDate = tariff.end_date
-                    ? new Date(tariff.end_date)
-                    : null;
-                return startDate <= today && (!endDate || endDate >= today);
-            })();
-
-            const formattedRate = formatRate(tariff.rate);
-            const unitLabel = unitLabels[tariff.unit] || "руб";
+            const statusInfo = getTariffStatusDisplay({
+                ...tariff,
+                service_is_active: service.is_active,
+                is_service_deleted: false,
+            });
 
             return {
                 ...tariff,
-                id: tariff.id, // Убедимся, что ID присутствует
+                id: tariff.id,
                 service_name: service.name || "Неизвестная услуга",
-                formatted_rate: `${formattedRate} ${unitLabel}`,
+                service_is_active: service.is_active,
+                is_service_deleted: false,
+                formatted_rate: tariff.formatted_rate,
                 formatted_start_date: formatDate(tariff.start_date),
                 formatted_end_date: formatDate(tariff.end_date),
-                is_current: isCurrent,
+                status: tariff.status,
+                status_display: statusInfo.displayText,
+                status_color: statusInfo.color,
+                status_tooltip: statusInfo.tooltip,
+                status_show_dot: statusInfo.showDot,
             };
         })
     );
+
+    // Получим все тарифы без связанных услуг из ответа сервера и отформатируем
+    const processedOldTariffs = (oldTariffs || [])
+        .filter((tariff) => tariff != null)
+        .map((tariff) => {
+            const statusInfo = getTariffStatusDisplay({
+                ...tariff,
+                service_is_active: false,
+                is_service_deleted: true,
+            });
+
+            return {
+                ...tariff,
+                id: tariff.id,
+                service_name: tariff.service_name || "Удаленная услуга",
+                service_is_active: false,
+                is_service_deleted: true,
+                formatted_rate: tariff.formatted_rate,
+                formatted_start_date: formatDate(tariff.start_date),
+                formatted_end_date: formatDate(tariff.end_date),
+                status: tariff.status,
+                status_display: statusInfo.displayText,
+                status_color: statusInfo.color,
+                status_tooltip: statusInfo.tooltip,
+                status_show_dot: statusInfo.showDot,
+            };
+        });
+
+    // Объединяем и сортируем
+    const allTariffs = [
+        ...processedTariffsFromServices, // сначала тарифы связанных услуг
+        ...processedOldTariffs, // потом тарифы без связанных услуг
+    ].sort((a, b) => {
+        // if (!a.is_service_deleted && b.is_service_deleted) return -1;
+        // if (a.is_service_deleted && !b.is_service_deleted) return 1;
+        // // Затем по статусу: current -> future -> expired
+        // const statusOrder = {
+        //     current: 1,
+        //     future: 2,
+        //     expired: 3,
+        //     disabled: 4,
+        // };
+        // const statusA = statusOrder[a.status] || 5;
+        // const statusB = statusOrder[b.status] || 5;
+        // if (statusA !== statusB) return statusA - statusB;
+        // // Затем по дате начала (новые сверху)
+        // return new Date(b.start_date) - new Date(a.start_date);
+    });
+
     // Обработчики диалога
     const handleOpenTariff = (tariff = null) => {
         setCurrentTariff(tariff);
@@ -279,9 +383,12 @@ const AdminServicesPage = () => {
         setTariffsOpen(false);
         setCurrentTariff(null);
     };
-    // Сохранение тарифа
+
+    // Обновление тарифа
     const handleSubmitTariff = async (e) => {
         e.preventDefault();
+        setLoading((prev) => ({ ...prev, action: true }));
+
         const data = new FormData(e.target);
         const tariffData = Object.fromEntries(data.entries());
 
@@ -293,22 +400,60 @@ const AdminServicesPage = () => {
                 `/admin/tariffs/${currentTariff.id}`,
                 tariffData
             );
-            showSuccess(response.data.message);
-            fetchServices();
+
+            if (response.data.success) {
+                const updatedService = response.data.data;
+                setServices((prev) =>
+                    prev.map((service) =>
+                        service.id === updatedService.id
+                            ? updatedService
+                            : service
+                    )
+                );
+                showSuccess(response.data.message);
+            }
+
             handleCloseTariff();
         } catch (error) {
-            showError(error);
+            showError(
+                error.response?.data?.message || "Ошибка обновления тарифа"
+            );
+        } finally {
+            setLoading((prev) => ({ ...prev, action: false }));
         }
     };
+
     // Удаление тарифа
     const handleDeleteTariff = async (id) => {
         if (window.confirm("Вы уверены, что хотите удалить этот тариф?")) {
+            setLoading((prev) => ({ ...prev, action: true }));
             try {
-                await apiClient.delete(`/admin/tariffs/${id}`);
-                showSuccess("Тариф удален");
-                fetchServices();
+                const response = await apiClient.delete(`/admin/tariffs/${id}`);
+
+                if (response.data.success) {
+                    showSuccess(response.data.message);
+
+                    if (response.data.data) {
+                        const updatedService = response.data.data;
+                        setServices((prev) =>
+                            prev.map((service) =>
+                                service.id === updatedService.id
+                                    ? updatedService
+                                    : service
+                            )
+                        );
+                    } else {
+                        setOldTariffs((prev) =>
+                            prev.filter((tariff) => tariff.id !== id)
+                        );
+                    }
+                }
             } catch (error) {
-                showError(error);
+                showError(
+                    error.response?.data?.message || "Ошибка удаления тарифа"
+                );
+            } finally {
+                setLoading((prev) => ({ ...prev, action: false }));
             }
         }
     };
@@ -351,6 +496,17 @@ const AdminServicesPage = () => {
                     mb: 3,
                 }}
             >
+                {/* Показываем ошибки */}
+                {errors.services && (
+                    <Alert severity="error" sx={{ mb: 2 }}>
+                        {errors.services}
+                    </Alert>
+                )}
+                {errors.apartments && (
+                    <Alert severity="warning" sx={{ mb: 2 }}>
+                        {errors.apartments}
+                    </Alert>
+                )}
                 <ServicesTable
                     services={processedServices}
                     onAdd={() => handleServiceOpen()}

@@ -8,16 +8,16 @@ use Illuminate\Support\Facades\Log;
 
 class TariffService
 {
-    public function getActiveTariff($serviceId)
-    {
-        return Tariff::where('service_id', $serviceId)
-            ->where(function ($query) {
-                $query->whereNull('end_date')
-                    ->orWhere('end_date', '>', now());
-            })
-            ->latest('start_date')
-            ->first();
-    }
+    // public function getCurrentTariff($serviceId)
+    // {
+    //     return Tariff::where('service_id', $serviceId)
+    //         ->where(function ($query) {
+    //             $query->whereNull('end_date')
+    //                 ->orWhere('end_date', '>', now());
+    //         })
+    //         ->latest('start_date')
+    //         ->first();
+    // }
 
     public function canEditTariff(Tariff $tariff): bool
     {

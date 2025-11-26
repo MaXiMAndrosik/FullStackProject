@@ -132,7 +132,7 @@ const AdminServicesAssignmentsPage = () => {
                     tariffStatus = "active";
                 } else if (startDate > today) {
                     // Будущий тариф
-                    currentTariff = "Ожидается";
+                    currentTariff = "Планируется";
                     tariffStatus = "future";
                 } else if (endDate && endDate < today) {
                     // Устаревший тариф
@@ -245,12 +245,6 @@ const AdminServicesAssignmentsPage = () => {
     // Переключение активности
     const handleAssignmentToggle = useCallback(async (id, isActive) => {
         setLoading((prev) => ({ ...prev, action: true }));
-
-        setAssignmentsServices((prev) =>
-            prev.map((item) =>
-                item.id === id ? { ...item, is_active: !isActive } : item
-            )
-        );
 
         try {
             const response = await apiClient.put(

@@ -1,6 +1,18 @@
 import React from "react";
-import { Button, Typography, Chip, Switch, Box, Tooltip } from "@mui/material";
+import {
+    Button,
+    Typography,
+    Chip,
+    Switch,
+    Box,
+    Tooltip,
+    LinearProgress,
+} from "@mui/material";
 import { DataGrid } from "@mui/x-data-grid";
+import {
+    getServiceTariffDisplayUniversal,
+    getServiceNameTextStyle,
+} from "../ui/StatusHelper";
 
 const ServicesTable = ({
     services,
@@ -8,6 +20,7 @@ const ServicesTable = ({
     onEdit,
     onDelete,
     onToggle,
+    loading = false,
 }) => {
     const columnsServices = [
         {
@@ -54,6 +67,34 @@ const ServicesTable = ({
             headerName: "Название услуги",
             flex: 1,
             minWidth: 200,
+            renderCell: (params) => {
+                const displayInfo = getServiceTariffDisplayUniversal(
+                    params.row
+                );
+                return (
+                    <Tooltip title={displayInfo.tooltipName}>
+                        <Box
+                            sx={{
+                                width: "100%",
+                                height: "100%",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "flex-start",
+                                gap: 1,
+                            }}
+                        >
+                            <Typography
+                                variant="body2"
+                                sx={getServiceNameTextStyle(
+                                    params.row.is_active
+                                )}
+                            >
+                                {params.value}
+                            </Typography>
+                        </Box>
+                    </Tooltip>
+                );
+            },
         },
         // {
         //     field: "code",
@@ -156,9 +197,39 @@ const ServicesTable = ({
             ),
         },
         {
-            field: "current_tariff",
+            field: "current_tariff_display",
             headerName: "Текущий тариф",
-            width: 150,
+            width: 180,
+            renderCell: (params) => {
+                const displayInfo = getServiceTariffDisplayUniversal(
+                    params.row
+                );
+
+                return (
+                    <Tooltip title={displayInfo.tooltipTariff}>
+                        <Box
+                            sx={{
+                                width: "100%",
+                                height: "100%",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "flex-start",
+                                gap: 1,
+                            }}
+                        >
+                            <Typography
+                                variant="body2"
+                                sx={{
+                                    color: displayInfo.color,
+                                    fontStyle: displayInfo.fontStyle, // Используем fontStyle из displayInfo
+                                }}
+                            >
+                                {displayInfo.displayText}
+                            </Typography>
+                        </Box>
+                    </Tooltip>
+                );
+            },
         },
         {
             field: "actions",
@@ -205,6 +276,9 @@ const ServicesTable = ({
                     услуг
                 </Typography>
             </Typography>
+
+            {loading && <LinearProgress />}
+
             <DataGrid
                 rows={services}
                 columns={columnsServices}
@@ -214,6 +288,7 @@ const ServicesTable = ({
                 }}
                 disableColumnResize
                 density="compact"
+                loading={loading}
             />
             <Button variant="contained" onClick={onAdd} sx={{ my: 2 }}>
                 Добавить услугу

@@ -46,6 +46,7 @@ class ServiceAssignmentSeeder extends Seeder
                 // Создаем индивидуальный тариф для этой привязки
                 AssignmentTariff::create([
                     'assignment_id' => $assignment->id,
+                    'assignment_name' => $assignment->name,
                     'rate' => $serviceData['rates'][$index] ?? 500.0,
                     'unit' => 'm2',
                     'start_date' => Carbon::now()->subMonths(3),
@@ -71,6 +72,7 @@ class ServiceAssignmentSeeder extends Seeder
 
             AssignmentTariff::create([
                 'assignment_id' => $assignment->id,
+                'assignment_name' => $assignment->name,
                 'rate' => $customRates[$index],
                 'unit' => 'fixed',
                 'start_date' => Carbon::now()->subMonth(),

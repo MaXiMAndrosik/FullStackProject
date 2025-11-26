@@ -13,7 +13,8 @@ return new class extends Migration
     {
         Schema::create('tariffs', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('service_id')->constrained()->onDelete('cascade')->comment('Услуга');
+            $table->foreignId('service_id')->nullable()->constrained()->onDelete('set null')->comment('Услуга');
+            $table->string('service_name', 100)->comment('Название услуги на момент создания тарифа');
             $table->decimal('rate', 10, 4)->comment('Значение тарифа');
             $table->string('unit', 20)->default('fixed')->comment('Единица измерения: m2, gcal, m3, kwh, fixed');
             $table->date('start_date')->comment('Дата начала действия');
