@@ -14,13 +14,22 @@ class FormatHelper
         }
 
         // Округляем до 4 знаков и удаляем незначащие нули
-        $formatted = number_format((float)$value, 2, '.', '');
+        $formatted = number_format((float)$value, 4, '.', '');
         $formatted = rtrim($formatted, '0');
         $formatted = rtrim($formatted, '.');
 
-        // Если число целое - добавляем .0 для указания на десятичную дробь
+        // Если число целое - добавляем .00 для указания на десятичную дробь
         if (strpos($formatted, '.') === false) {
             $formatted .= '.00';
+        }
+        // Если после запятой только 1 знак - добавляем 0
+        else if (strlen(substr($formatted, strpos($formatted, '.') + 1)) === 1) {
+            $formatted .= '0';
+        }
+
+        // Если после запятой только 3 знака - добавляем 0
+        else if (strlen(substr($formatted, strpos($formatted, '.') + 1)) === 3) {
+            $formatted .= '0';
         }
 
         return $formatted;

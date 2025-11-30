@@ -14,10 +14,20 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Symfony\Component\HttpFoundation\Response;
 
+/**
+ * Контроллер для управления тарифами
+ * 
+ * @see \App\Models\Tariff
+ * @see \App\Services\TariffService
+ * @uses \App\Http\Resources\TariffResource
+ */
 class TariffController extends Controller
 {
     protected $tariffService;
 
+    /**
+     * @see \App\Services\TariffService
+     */
     public function __construct(TariffService $tariffService)
     {
         $this->tariffService = $tariffService;
@@ -25,6 +35,8 @@ class TariffController extends Controller
 
     /**
      * Получить список тарифов для услуги
+     * @see \App\Models\Tariff
+     * @uses \App\Http\Resources\TariffResource
      */
     public function index(Request $request)
     {
@@ -69,6 +81,8 @@ class TariffController extends Controller
 
     /**
      * Создать новый тариф
+     * @see \App\Services\TariffService::validateNewTariffDates()
+     * @uses \App\Models\Tariff::create()
      */
     public function store(Request $request)
     {
@@ -172,6 +186,10 @@ class TariffController extends Controller
 
     /**
      * Обновить тариф
+     * @see \App\Services\TariffService::validateDateChanges()
+     * @see \App\Services\TariffService::createNextTariff()
+     * @see \App\Services\TariffService::handleEndDateChange()
+     * @uses \App\Models\Tariff::update()
      */
     public function update(Request $request, Tariff $tariff)
     {

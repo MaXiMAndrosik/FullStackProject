@@ -6,6 +6,13 @@ use App\Models\Tariff;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * Сервис для работы с тарифами
+ * 
+ * @see \App\Http\Controllers\Api\Admin\TariffController
+ * @see \App\Http\Controllers\Api\Admin\ServiceController
+ * @uses \App\Models\Tariff
+ */
 class TariffService
 {
     // public function getCurrentTariff($serviceId)
@@ -19,11 +26,21 @@ class TariffService
     //         ->first();
     // }
 
+    /**
+     * Проверка возможности редактирования тарифа
+     * @see \App\Http\Controllers\Api\Admin\TariffController::update()
+     * @uses \App\Models\Tariff::isExpired()
+     */
     public function canEditTariff(Tariff $tariff): bool
     {
         return !$tariff->isExpired();
     }
 
+    /**
+     * Валидация изменений дат тарифа
+     * @see \App\Http\Controllers\Api\Admin\TariffController::update()
+     * @uses Carbon::parse()
+     */
     public function validateDateChanges(Tariff $tariff, array $validated): array
     {
         $errors = [];
@@ -46,6 +63,8 @@ class TariffService
 
     /**
      * Валидация дат для нового тарифа
+     * @see \App\Http\Controllers\Api\Admin\TariffController::store()
+     * @uses \App\Models\Tariff::where()
      */
     public function validateNewTariffDates($serviceId, $startDate, $endDate = null): array
     {
@@ -95,8 +114,14 @@ class TariffService
     }
 
     /**
-     * Обработка изменения end_date тарифа согласно требованиям
+     * Обработка изменения end_date тарифа
+     * @see \App\Http\Controllers\Api\Admin\TariffController::update()
+     * @uses \App\Models\Tariff::where()
+     * @uses \App\Models\Tariff::update()
+     * @uses Log::info()
+     * @uses Log::debug()
      */
+
     public function handleEndDateChange(Tariff $tariff, $newEndDate)
     {
         $nextStartDate = Carbon::parse($newEndDate)->addDay();

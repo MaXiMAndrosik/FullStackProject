@@ -12,7 +12,6 @@ class TariffResource extends JsonResource
 {
     public function toArray($request)
     {
-        $today = Carbon::today();
         $startDate = Carbon::parse($this->start_date);
         $endDate = $this->end_date ? Carbon::parse($this->end_date) : null;
 
@@ -27,7 +26,6 @@ class TariffResource extends JsonResource
         } else {
             $serviceName = $this->service->name ?? 'Неизвестная услуга';
             $serviceIsActive = $this->service->is_active ?? false;
-
             $status = $this->getTariffStatus();
         }
 
