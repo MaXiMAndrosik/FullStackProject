@@ -196,12 +196,13 @@ class ServiceController extends Controller
 
                 $service->update($validated);
 
-                if (isset($validated['meter_type_ids'])) {
-                    $service->meterTypes()->sync(
-                        $service->calculation_type === 'meter'
-                            ? $validated['meter_type_ids']
-                            : []
-                    );
+                // Всегда синхронизируем meter_type_ids, если они переданы
+                if (array_key_exists('meter_type_ids', $validated)) {
+                    $newMeterTypeIds = $service->calculation_type === 'meter'
+                        ? $validated['meter_type_ids']
+                        : [];
+
+                    $service->meterTypes()->sync($newMeterTypeIds);
                 }
 
                 $newMeterTypeIds = $service->meterTypes->pluck('id')->toArray();
@@ -213,12 +214,19 @@ class ServiceController extends Controller
                     $newMeterTypeIds
                 );
 
-                // Обрабатываем изменение типа расчета с новой логикой
+                // Обрабатываем изменение типа расчета
                 if (
                     isset($validated['calculation_type']) &&
                     $validated['calculation_type'] !== $originalCalculationType
                 ) {
                     $this->handleCalculationTypeChange($service, $validated);
+                }            // ВАЖНОЕ ИСПРАВЛЕНИЕ: Также обрабатываем изменение meter_type_ids при calculation_type = 'meter'
+                elseif (
+                    $service->calculation_type === 'meter' &&
+                    isset($validated['meter_type_ids']) &&
+                    $oldMeterTypeIds != $validated['meter_type_ids']
+                ) {
+                    $this->handleMeterTypeIdsChange($service, $validated);
                 }
             });
 
@@ -600,5 +608,32 @@ class ServiceController extends Controller
         ]);
 
         return $tariff;
+    }
+
+    /**
+     * Обработка изменения типов счетчиков при том же calculation_type = 'meter'
+     */
+    protected function handleMeterTypeIdsChange(Service $service, array $validated)
+    {
+        $period = $this->billingPeriodService->getEditingPeriod();
+        $newUnit = $this->getUnitForService(
+            'meter', // calculation_type остается 'meter'
+            $validated['meter_type_ids']
+        );
+
+        // Получаем ВСЕ тарифы услуги
+        $tariffs = $service->tariffs;
+
+        if ($tariffs->isEmpty()) {
+            // Если нет тарифов, создаем новый
+            $this->createNewTariff($service, $newUnit, $period);
+            return;
+        }
+
+        // 1. Обрабатываем ВСЕ будущие тарифы
+        $this->handleFutureTariffs($tariffs, $newUnit);
+
+        // 2. Обрабатываем активные тарифы
+        $this->handleCurrentTariffs($service, $tariffs, $newUnit, $period);
     }
 }
