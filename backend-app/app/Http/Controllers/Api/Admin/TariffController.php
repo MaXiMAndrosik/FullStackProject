@@ -17,16 +17,19 @@ use Symfony\Component\HttpFoundation\Response;
 /**
  * Контроллер для управления тарифами
  * 
- * @see \App\Models\Tariff
- * @see \App\Services\TariffService
- * @uses \App\Http\Resources\TariffResource
+ * @see \App\Models\Tariff Модель тарифа
+ * @see \App\Services\TariffService Сервис бизнес-логики тарифов
+ * @uses \App\Http\Resources\TariffResource Ресурс для форматирования тарифов
+ * @uses \Illuminate\Validation\Validator Валидация входных данных
  */
 class TariffController extends Controller
 {
     protected $tariffService;
 
     /**
-     * @see \App\Services\TariffService
+     * Конструктор контроллера
+     * 
+     * @param TariffService $tariffService Сервис бизнес-логики тарифов
      */
     public function __construct(TariffService $tariffService)
     {
@@ -35,8 +38,13 @@ class TariffController extends Controller
 
     /**
      * Получить список тарифов для услуги
-     * @see \App\Models\Tariff
-     * @uses \App\Http\Resources\TariffResource
+     * 
+     * @see \App\Models\Tariff Модель тарифа
+     * @uses \App\Http\Resources\TariffResource Коллекция ресурсов тарифов
+     * @uses \Illuminate\Validation\Validator Валидация запроса
+     * 
+     * @param Request $request HTTP запрос
+     * @return \Illuminate\Http\JsonResponse
      */
     public function index(Request $request)
     {
@@ -49,11 +57,7 @@ class TariffController extends Controller
             ]);
 
             if ($validator->fails()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Ошибка валидации запроса.',
-                    'errors' => $validator->errors()
-                ], Response::HTTP_UNPROCESSABLE_ENTITY);
+                return $this->handleValidationErrors($validator, 'загрузить тарифы');
             }
 
             $serviceId = $request->service_id;
@@ -81,8 +85,13 @@ class TariffController extends Controller
 
     /**
      * Создать новый тариф
-     * @see \App\Services\TariffService::validateNewTariffDates()
-     * @uses \App\Models\Tariff::create()
+     * 
+     * @see \App\Services\TariffService::validateNewTariffDates() Валидация дат тарифа
+     * @uses \App\Models\Tariff::create() Создание тарифа в БД
+     * @uses \Illuminate\Validation\Validator Валидация входных данных
+     * 
+     * @param Request $request HTTP запрос
+     * @return \Illuminate\Http\JsonResponse
      */
     public function store(Request $request)
     {
@@ -107,11 +116,7 @@ class TariffController extends Controller
             ]);
 
             if ($validator->fails()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Ошибка валидации данных тарифа.',
-                    'errors' => $validator->errors()
-                ], Response::HTTP_UNPROCESSABLE_ENTITY);
+                return $this->handleValidationErrors($validator, 'создать тариф');
             }
 
             $validated = $validator->validated();
@@ -124,11 +129,7 @@ class TariffController extends Controller
             );
 
             if (!empty($dateErrors)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Невозможно создать тариф из-за конфликта дат.',
-                    'errors' => $dateErrors
-                ], Response::HTTP_BAD_REQUEST);
+                return $this->handleValidationErrors($dateErrors, 'создать тариф');
             }
 
             $tariff = DB::transaction(function () use ($validated) {
@@ -162,6 +163,12 @@ class TariffController extends Controller
 
     /**
      * Показать конкретный тариф
+     * 
+     * @see \App\Models\Tariff Модель тарифа
+     * @uses \App\Http\Resources\TariffResource Ресурс тарифа
+     * 
+     * @param Tariff $tariff Запрашиваемый тариф
+     * @return \Illuminate\Http\JsonResponse
      */
     public function show(Tariff $tariff)
     {
@@ -186,10 +193,17 @@ class TariffController extends Controller
 
     /**
      * Обновить тариф
-     * @see \App\Services\TariffService::validateDateChanges()
-     * @see \App\Services\TariffService::createNextTariff()
-     * @see \App\Services\TariffService::handleEndDateChange()
-     * @uses \App\Models\Tariff::update()
+     * 
+     * @see \App\Services\TariffService::validateDateChanges() Валидация изменений дат
+     * @see \App\Services\TariffService::createNextTariff() Создание следующего тарифа
+     * @see \App\Services\TariffService::handleEndDateChange() Обработка изменения даты окончания
+     * @uses \App\Models\Tariff::update() Обновление тарифа
+     * @uses \App\Models\Tariff::isExpired() Проверка архивности тарифа
+     * @uses Carbon::parse() Парсинг дат
+     * 
+     * @param Request $request HTTP запрос
+     * @param Tariff $tariff Обновляемый тариф
+     * @return \Illuminate\Http\JsonResponse
      */
     public function update(Request $request, Tariff $tariff)
     {
@@ -218,11 +232,7 @@ class TariffController extends Controller
             ]);
 
             if ($validator->fails()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Ошибка валидации данных тарифа.',
-                    'errors' => $validator->errors()
-                ], Response::HTTP_UNPROCESSABLE_ENTITY);
+                return $this->handleValidationErrors($validator, 'обновить тариф');
             }
 
             $validated = $validator->validated();
@@ -240,11 +250,7 @@ class TariffController extends Controller
             // Проверяем валидность изменений дат
             $dateErrors = $this->tariffService->validateDateChanges($tariff, $validated);
             if (!empty($dateErrors)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Невозможно обновить тариф.',
-                    'errors' => $dateErrors
-                ], Response::HTTP_BAD_REQUEST);
+                return $this->handleValidationErrors($dateErrors, 'обновить тариф');
             }
 
             DB::transaction(function () use ($tariff, $validated) {
@@ -317,6 +323,14 @@ class TariffController extends Controller
 
     /**
      * Удалить архивный тариф
+     * 
+     * @see \App\Services\TariffService::canDeleteTariff() Проверка возможности удаления
+     * @uses \App\Models\Tariff::delete() Удаление тарифа
+     * @uses \App\Models\Tariff::isExpired() Проверка архивности тарифа
+     * 
+     * @param Request $request HTTP запрос
+     * @param Tariff $tariff Удаляемый тариф
+     * @return \Illuminate\Http\JsonResponse
      */
     public function destroy(Request $request, Tariff $tariff)
     {
@@ -328,15 +342,6 @@ class TariffController extends Controller
                     'message' => 'Можно удалять только архивные тарифы. Активные и будущие тарифы удалять запрещено.'
                 ], Response::HTTP_BAD_REQUEST);
             }
-
-            // Проверяем, не является ли тариф единственным для услуги
-            // $tariffCount = Tariff::where('service_id', $tariff->service_id)->count();
-            // if ($tariffCount <= 1) {
-            //     return response()->json([
-            //         'success' => false,
-            //         'message' => 'Нельзя удалить единственный тариф услуги.'
-            //     ], Response::HTTP_BAD_REQUEST);
-            // }
 
             $serviceId = $tariff->service_id;
             $tariff->delete();
@@ -369,42 +374,13 @@ class TariffController extends Controller
     }
 
     /**
-     * Получить архивные тарифы для услуги
-     */
-    // public function expired(Request $request)
-    // {
-    //     try {
-    //         $validator = Validator::make($request->all(), [
-    //             'service_id' => 'required|exists:services,id'
-    //         ]);
-
-    //         if ($validator->fails()) {
-    //             return response()->json([
-    //                 'success' => false,
-    //                 'message' => 'Ошибка валидации.',
-    //                 'errors' => $validator->errors()
-    //             ], Response::HTTP_UNPROCESSABLE_ENTITY);
-    //         }
-
-    //         $serviceId = $request->service_id;
-    //         $expiredTariffs = $this->tariffService->getExpiredTariffs($serviceId);
-
-    //         return response()->json([
-    //             'success' => true,
-    //             'message' => 'Архивные тарифы загружены.',
-    //             'data' => TariffResource::collection($expiredTariffs)
-    //         ], Response::HTTP_OK);
-    //     } catch (\Exception $e) {
-    //         Log::error('Failed to fetch expired tariffs: ' . $e->getMessage());
-    //         return response()->json([
-    //             'success' => false,
-    //             'message' => 'Ошибка при загрузке архивных тарифов.'
-    //         ], Response::HTTP_INTERNAL_SERVER_ERROR);
-    //     }
-    // }
-
-    /**
      * Получить архивные тарифы (от удаленных услуг)
+     * 
+     * @see \App\Models\Tariff Модель тарифа
+     * @uses \App\Http\Resources\TariffResource Коллекция ресурсов тарифов
+     * 
+     * @param Request $request HTTP запрос
+     * @return \Illuminate\Http\JsonResponse
      */
     public function oldTariffs(Request $request)
     {
@@ -425,5 +401,44 @@ class TariffController extends Controller
                 'message' => 'Ошибка при загрузке архивных тарифов.'
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
+    }
+
+    /**
+     * Обработка ошибок валидации (унифицированная)
+     * 
+     * @uses \Illuminate\Validation\Validator Обработка ошибок валидатора
+     * @uses Response::HTTP_UNPROCESSABLE_ENTITY Код ответа для ошибок валидации
+     * 
+     * @param mixed $errors Объект Validator или массив ошибок
+     * @param string $action Действие, которое выполнялось
+     * @return \Illuminate\Http\JsonResponse
+     */
+    protected function handleValidationErrors($errors, $action = 'выполнить операцию')
+    {
+        $errorMessages = [];
+
+        if ($errors instanceof \Illuminate\Validation\Validator) {
+            // Обработка ошибок от Validator
+            foreach ($errors->errors()->toArray() as $field => $fieldErrors) {
+                foreach ($fieldErrors as $error) {
+                    $errorMessages[] = $error;
+                }
+            }
+            $responseErrors = $errors->errors();
+        } else {
+            // Обработка массива ошибок бизнес-логики
+            foreach ($errors as $error) {
+                $errorMessages[] = $error;
+            }
+            $responseErrors = $errors;
+        }
+
+        $detailedMessage = implode(' ', $errorMessages);
+
+        return response()->json([
+            'success' => false,
+            'message' => "Не удалось {$action}. {$detailedMessage}",
+            'errors' => $responseErrors
+        ], Response::HTTP_UNPROCESSABLE_ENTITY);
     }
 }

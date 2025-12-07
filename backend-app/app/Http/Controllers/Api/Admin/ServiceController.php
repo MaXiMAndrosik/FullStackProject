@@ -393,11 +393,11 @@ class ServiceController extends Controller
             $responseErrors = ['tariff_start_date' => $errors];
         }
 
-        $detailedMessage = implode(' ', $errorMessages);
+        $detailedMessage = implode(PHP_EOL, $errorMessages);
 
         return response()->json([
             'success' => false,
-            'message' => "Не удалось {$action}. {$detailedMessage}",
+            'message' => "Не удалось {$action}." . PHP_EOL . "{$detailedMessage}",
             'errors' => $responseErrors
         ], Response::HTTP_UNPROCESSABLE_ENTITY);
     }

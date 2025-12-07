@@ -36,11 +36,11 @@ class ServiceBusinessService
     /**
      * Валидация даты начала тарифа при создании услуги
      * 
-     * @see \App\Http\Controllers\Api\Admin\ServiceController::store()
-     * @uses \App\Services\BillingPeriodService::validateStartDate()
-     * @uses \App\Services\BillingPeriodService::getAllowedStartDates()
-     * @uses \App\Services\BillingPeriodService::getEditingPeriod()
-     * @uses \App\Services\BillingPeriodService::getDateExamples()
+     * @see \App\Http\Controllers\Api\Admin\ServiceController::store() Используется при создании услуги
+     * @uses \App\Services\BillingPeriodService::validateStartDate() Проверка первого числа месяца
+     * @uses \App\Services\BillingPeriodService::getAllowedStartDates() Получение допустимых дат
+     * @uses \App\Services\BillingPeriodService::getCurrentPeriod() Получение текущего периода
+     * @uses \App\Services\BillingPeriodService::getDateExamples() Получение примеров дат
      * 
      * @param string $date Дата начала тарифа
      * @return array Массив ошибок валидации
@@ -58,14 +58,14 @@ class ServiceBusinessService
         // Получаем допустимые даты
         $allowedDates = $this->billingPeriodService->getAllowedStartDates();
         if (!in_array($date, $allowedDates)) {
-            $period = $this->billingPeriodService->getEditingPeriod();
+            $period = $this->billingPeriodService->getCurrentPeriod();
             $examples = $this->billingPeriodService->getDateExamples();
             $exampleString = implode(', ', $examples);
 
             if ($period['is_before_15th']) {
-                $errors[] = "До 15 числа можно установить дату начала в прошлом, текущем или будущих месяцах. Примеры допустимых дат: {$exampleString}";
+                $errors[] = "До 15 числа можно установить дату начала в прошлом, текущем или будущих месяцах." . PHP_EOL . "Примеры допустимых дат:" . PHP_EOL . "{$exampleString}";
             } else {
-                $errors[] = "После 15 числа можно установить дату начала в текущем или будущих месяцах. Примеры допустимых дат: {$exampleString}";
+                $errors[] = "После 15 числа можно установить дату начала в текущем или будущих месяцах." . PHP_EOL . "Примеры допустимых дат:" . PHP_EOL . "{$exampleString}";
             }
         }
 
@@ -75,7 +75,7 @@ class ServiceBusinessService
     /**
      * Создание начального тарифа для новой услуги
      * 
-     * @see \App\Http\Controllers\Api\Admin\ServiceController::store()
+     * @see \App\Http\Controllers\Api\Admin\ServiceController::store() Используется при создании услуги
      * @uses self::getUnitForService() Определение единицы измерения
      * @uses self::createNewTariff() Создание тарифа
      * 
@@ -94,17 +94,20 @@ class ServiceBusinessService
     /**
      * Удаление услуги с обработкой связанных тарифов
      * 
-     * @see \App\Http\Controllers\Api\Admin\ServiceController::destroy()
+     * @see \App\Http\Controllers\Api\Admin\ServiceController::destroy() Используется при удалении услуги
      * @uses \App\Services\TariffStatusService::getStatus() Определение статуса тарифов
-     * @uses \App\Services\BillingPeriodService::getEditingPeriod() Получение текущего периода редактирования
+     * @uses \App\Services\BillingPeriodService::getCurrentPeriod() Получение текущего периода редактирования
      * @uses \App\Models\Tariff::delete() Удаление тарифов
      * @uses \App\Models\Tariff::update() Архивация тарифов
      * @uses \App\Models\Service::delete() Удаление услуги
+     * 
+     * @param Service $service Услуга для удаления
+     * @return void
      */
     public function deleteService(Service $service): void
     {
         DB::transaction(function () use ($service) {
-            $period = $this->billingPeriodService->getEditingPeriod();
+            $period = $this->billingPeriodService->getCurrentPeriod();
             $tariffs = $service->tariffs;
 
             // 1. Удаляем планируемые тарифы
@@ -180,15 +183,19 @@ class ServiceBusinessService
     /**
      * Обработка изменения типа расчета услуги
      * 
-     * @see \App\Http\Controllers\Api\Admin\ServiceController::update()
-     * @uses \App\Services\BillingPeriodService::getEditingPeriod() Получение периода редактирования
+     * @see \App\Http\Controllers\Api\Admin\ServiceController::update() Используется при обновлении услуги
+     * @uses \App\Services\BillingPeriodService::getCurrentPeriod() Получение текущего периода редактирования
      * @uses self::handleFutureTariffs() Обработка будущих тарифов
      * @uses self::handleCurrentTariffs() Обработка текущих тарифов
      * @uses self::createNewTariff() Создание нового тарифа
+     * 
+     * @param Service $service Обновляемая услуга
+     * @param array $validated Валидированные данные
+     * @return void
      */
     public function handleCalculationTypeChange(Service $service, array $validated): void
     {
-        $period = $this->billingPeriodService->getEditingPeriod();
+        $period = $this->billingPeriodService->getCurrentPeriod();
         $newUnit = $this->getUnitForService(
             $validated['calculation_type'],
             $validated['meter_type_ids'] ?? []
@@ -208,14 +215,18 @@ class ServiceBusinessService
     /**
      * Обработка изменения типов счетчиков
      * 
-     * @see \App\Http\Controllers\Api\Admin\ServiceController::update()
-     * @uses \App\Services\BillingPeriodService::getEditingPeriod() Получение периода редактирования
+     * @see \App\Http\Controllers\Api\Admin\ServiceController::update() Используется при обновлении услуги
+     * @uses \App\Services\BillingPeriodService::getCurrentPeriod() Получение текущего периода редактирования
      * @uses self::handleFutureTariffs() Обработка будущих тарифов
      * @uses self::handleCurrentTariffs() Обработка текущих тарифов
+     * 
+     * @param Service $service Обновляемая услуга
+     * @param array $validated Валидированные данные
+     * @return void
      */
     public function handleMeterTypeIdsChange(Service $service, array $validated): void
     {
-        $period = $this->billingPeriodService->getEditingPeriod();
+        $period = $this->billingPeriodService->getCurrentPeriod();
         $newUnit = $this->getUnitForService('meter', $validated['meter_type_ids']);
 
         $tariffs = $service->tariffs;
@@ -234,6 +245,10 @@ class ServiceBusinessService
      * 
      * @uses \App\Services\TariffStatusService::getStatus() Определение статуса тарифов
      * @uses \App\Models\Tariff::update() Обновление единицы измерения
+     * 
+     * @param Collection $tariffs Коллекция тарифов
+     * @param string $newUnit Новая единица измерения
+     * @return void
      */
     protected function handleFutureTariffs($tariffs, $newUnit): void
     {
@@ -254,11 +269,17 @@ class ServiceBusinessService
     }
 
     /**
-     * Обработка активных тарифов
+     * Обработка действующих тарифов
      * 
      * @uses \App\Services\TariffStatusService::getStatus() Определение статуса тарифов
      * @uses \App\Models\Tariff::update() Обновление тарифов
      * @uses self::createNewTariff() Создание нового тарифа
+     * 
+     * @param Service $service Обновляемая услуга
+     * @param Collection $tariffs Коллекция тарифов
+     * @param string $newUnit Новая единица измерения
+     * @param array $period Данные текущего периода
+     * @return void
      */
     protected function handleCurrentTariffs(Service $service, $tariffs, $newUnit, $period): void
     {
@@ -278,7 +299,17 @@ class ServiceBusinessService
     }
 
     /**
-     * Обработка до 15 числа
+     * Обработка изменения до 15 числа
+     * 
+     * @uses \App\Models\Tariff::update() Обновление тарифов
+     * @uses self::createNewTariff() Создание нового тарифа
+     * 
+     * @param Service $service Обновляемая услуга
+     * @param Tariff $tariff Текущий тариф
+     * @param Carbon $startDate Дата начала тарифа
+     * @param string $newUnit Новая единица измерения
+     * @param array $period Данные текущего периода
+     * @return void
      */
     protected function handleBefore15th(Service $service, $tariff, $startDate, $newUnit, $period): void
     {
@@ -303,7 +334,17 @@ class ServiceBusinessService
     }
 
     /**
-     * Обработка после 15 числа
+     * Обработка изменения после 15 числа
+     * 
+     * @uses \App\Models\Tariff::update() Обновление тарифов
+     * @uses self::createNewTariff() Создание нового тарифа
+     * 
+     * @param Service $service Обновляемая услуга
+     * @param Tariff $tariff Текущий тариф
+     * @param Carbon $startDate Дата начала тарифа
+     * @param string $newUnit Новая единица измерения
+     * @param array $period Данные текущего периода
+     * @return void
      */
     protected function handleAfter15th(Service $service, $tariff, $startDate, $newUnit, $period): void
     {
@@ -327,12 +368,15 @@ class ServiceBusinessService
         }
     }
 
-
-
     /**
      * Создание нового тарифа
      * 
      * @uses \App\Models\Tariff::create() Создание тарифа
+     * 
+     * @param Service $service Услуга для тарифа
+     * @param string $unit Единица измерения
+     * @param Carbon $startDate Дата начала
+     * @return Tariff Созданный тариф
      */
     public function createNewTariff(Service $service, $unit, $startDate): Tariff
     {
@@ -358,8 +402,14 @@ class ServiceBusinessService
     /**
      * Обновление активации счетчиков
      * 
-     * @see \App\Http\Controllers\Api\Admin\ServiceController::update()
+     * @see \App\Http\Controllers\Api\Admin\ServiceController::update() Используется при обновлении услуги
      * @uses \App\Models\Meter::update() Обновление статуса счетчиков
+     * 
+     * @param bool $oldIsActive Старое состояние активности
+     * @param bool $newIsActive Новое состояние активности
+     * @param array $oldMeterTypeIds Старые ID типов счетчиков
+     * @param array $newMeterTypeIds Новые ID типов счетчиков
+     * @return void
      */
     public function updateMetersActivation($oldIsActive, $newIsActive, $oldMeterTypeIds, $newMeterTypeIds): void
     {
@@ -391,7 +441,7 @@ class ServiceBusinessService
     /**
      * Получение единицы измерения для услуги
      * 
-     * @uses \App\Models\MeterType::find()
+     * @uses \App\Models\MeterType::find() Поиск типа счетчика
      * 
      * @param string $calculationType Тип расчета
      * @param array $meterTypeIds ID типов счетчиков

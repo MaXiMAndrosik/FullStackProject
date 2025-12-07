@@ -271,6 +271,7 @@ const AdminServicesPage = () => {
             setLoading((prev) => ({ ...prev, action: false }));
         }
     };
+
     // Удаление услуги
     const handleServiceDelete = async (id) => {
         if (window.confirm("Вы уверены, что хотите удалить эту услугу?")) {
@@ -284,6 +285,7 @@ const AdminServicesPage = () => {
                     setServices((prev) =>
                         prev.filter((item) => item.id !== id)
                     );
+                    await fetchOldTariffs();
                     showSuccess(response.data.message);
                 }
             } catch (error) {
@@ -299,6 +301,7 @@ const AdminServicesPage = () => {
     const formatDate = (dateString) => {
         return dateString ? format(new Date(dateString), "dd.MM.yyyy") : "";
     };
+
     // Получим все тарифы из ответа сервера и отформатируем
     const processedTariffsFromServices = services.flatMap((service) =>
         (service.tariffs || []).map((tariff) => {

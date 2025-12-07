@@ -146,8 +146,10 @@ Route::middleware(['auth:sanctum', 'verified'])->group(function () {
     });
 });
 
-
-
+/**
+ * Тест работы redis
+ * GET http://localhost:8000/api/test-redis-connection
+ */
 Route::get('/test-redis-connection', function () {
     try {
         Cache::store('redis')->put('connection_test', 'success', 10);
@@ -159,4 +161,121 @@ Route::get('/test-redis-connection', function () {
             'error' => $e->getMessage()
         ], 500);
     }
+});
+
+// Тестовые роуты для проверки кэша
+Route::prefix('debug/cache')->group(function () {
+    // 1. Просмотр всех ключей кэша
+    Route::get('/keys', function () {
+        $redis = Redis::connection();
+        $keys = $redis->keys('*');
+
+        $data = [];
+        foreach ($keys as $key) {
+            $type = $redis->type($key);
+            $ttl = $redis->ttl($key);
+            $value = $redis->get($key);
+
+            try {
+                $decoded = json_decode($value, true);
+                $data[] = [
+                    'key' => $key,
+                    'type' => $type,
+                    'ttl' => $ttl,
+                    'value' => $decoded ?? $value,
+                    'raw_value' => $value,
+                ];
+            } catch (\Exception $e) {
+                $data[] = [
+                    'key' => $key,
+                    'type' => $type,
+                    'ttl' => $ttl,
+                    'value' => 'Cannot decode',
+                    'raw_value' => $value,
+                ];
+            }
+
+            return response()->json($data);
+        }
+
+        return response()->json(['error' => 'Unsupported cache driver']);
+    });
+
+    // 2. Просмотр конкретного ключа
+    Route::get('/get/{key}', function ($key) {
+        $value = Cache::get($key);
+
+        return response()->json([
+            'key' => $key,
+            'value' => $value,
+            'exists' => Cache::has($key),
+        ]);
+    });
+
+    // 3. Очистка всего кэша
+    Route::post('/flush', function () {
+        $result = Cache::flush();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Cache flushed',
+            'result' => $result,
+        ]);
+    });
+
+    // 4. Проверка кэша billing периода
+    Route::get('/billing-period', function () {
+        $today = now()->format('Y-m-d');
+        $cacheKey = "billing:editing_period:{$today}";
+
+        return response()->json([
+            'cache_key' => $cacheKey,
+            'cache_exists' => Cache::has($cacheKey),
+            'cache_value' => Cache::get($cacheKey),
+            'cache_ttl' => Redis::connection()->ttl(config('cache.prefix') . ':' . $cacheKey),
+        ]);
+    });
+
+    // 5. Удаление конкретного ключа
+    Route::delete('/delete/{key}', function ($key) {
+        $deleted = Cache::forget($key);
+
+        return response()->json([
+            'success' => $deleted,
+            'message' => $deleted ? 'Key deleted' : 'Key not found',
+            'key' => $key,
+        ]);
+    });
+});
+
+/**
+ * Тест системы метрик с трейтом
+ * GET http://localhost:8000/api/test-metrics-trait
+ */
+Route::get('/test-metrics-trait', function () {
+    $userService = app(\App\Services\UserService::class);
+
+    $results = [];
+    $results['test_user'] = $userService->getTestUser();
+    $results['test_user'] = $userService->getTestUser();
+    $results['test_user'] = $userService->getTestUser();
+    $results['user_profile'] = $userService->getUserProfile(1);
+    $results['create_user'] = $userService->createUser([
+        'name' => 'Metrics Test User',
+        'email' => 'metrics@test.com'
+    ]);
+
+    // Тест ошибки
+    try {
+        $results['error_test'] = $userService->getUserWithError(0);
+    } catch (\Exception $e) {
+        $results['error_handled'] = $e->getMessage();
+    }
+
+    return response()->json([
+        'message' => 'Metrics trait test completed',
+        'results' => $results,
+        'note' => 'Check services.log and services-metrics.log for metrics',
+        'timestamp' => now()->toISOString(),
+    ]);
 });

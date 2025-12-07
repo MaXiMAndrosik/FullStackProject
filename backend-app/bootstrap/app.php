@@ -15,7 +15,12 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->statefulApi();
-        $middleware->append(LogFrontendRequests::class);
+        // $middleware->append(LogFrontendRequests::class);
+
+        // use in development MODE
+        $middleware->append(\App\Http\Middleware\ServiceMetricsMiddleware::class);
+        $middleware->append(\App\Http\Middleware\ClearCacheForTesting::class);
+
         $middleware->alias(['role' => CheckRole::class]);
         // $middleware->append(CheckRole::class);
     })

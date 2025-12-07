@@ -2,7 +2,10 @@
 
 namespace App\Services;
 
+use App\Traits\CollectsMetrics;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Сервис для работы с биллинговыми периодами
@@ -14,11 +17,13 @@ use Carbon\Carbon;
  */
 class BillingPeriodService
 {
+    use CollectsMetrics;
+
     /**
-     * Получить первый день месяца
+     * Получение первого дня месяца
      * 
      * @see \App\Services\ServiceBusinessService::validateTariffStartDate() Используется при валидации
-     * @see self::getEditingPeriod() Используется для формирования периода
+     * @see self::getCurrentPeriod() Используется для формирования периода
      * @uses Carbon::parse() Парсинг входной даты
      * @uses Carbon::firstOfMonth() Получение первого дня месяца
      * 
@@ -33,9 +38,9 @@ class BillingPeriodService
 
     /**
      * Получить последний день месяца
-     * 
+     *
      * @see \App\Services\ServiceBusinessService::deleteService() Используется при удалении услуги
-     * @see self::getEditingPeriod() Используется для формирования периода
+     * @see self::getCurrentPeriod() Используется для формирования периода
      * @uses Carbon::parse() Парсинг входной даты
      * @uses Carbon::lastOfMonth() Получение последнего дня месяца
      * 
@@ -49,9 +54,9 @@ class BillingPeriodService
     }
 
     /**
-     * Проверить, что сегодня до 15 числа включительно
+     * Проверка, что сегодня до 15 числа включительно
      * 
-     * @see self::getEditingPeriod() Определяет логику формирования периода
+     * @see self::getCurrentPeriod() Определяет логику формирования периода
      * @see self::getAllowedStartDates() Определяет доступные даты
      * @uses Carbon::now() Получение текущей даты
      * 
@@ -63,43 +68,53 @@ class BillingPeriodService
     }
 
     /**
-     * Получить период для редактирования тарифов
+     * Получение текущего периода для редактирования тарифов
      * 
      * @see \App\Services\ServiceBusinessService::deleteService() Используется при удалении услуги
      * @see \App\Services\ServiceBusinessService::handleCalculationTypeChange() Используется при изменении типа расчета
      * @see \App\Services\ServiceBusinessService::handleMeterTypeIdsChange() Используется при изменении типов счетчиков
      * @see \App\Services\TariffStatusService::getStatus() Используется для определения статуса тарифов
+     * @see \App\Services\TariffStatusService::getMultipleTariffsInfo() Используется для получения информации о тарифах услуги
+     * @see \App\Services\TariffStatusService::getTariffInfo() Используется для получения информации о тарифе
      * @uses self::firstOfMonth() Получение первых дней месяцев
      * @uses self::lastOfMonth() Получение последних дней месяцев
      * @uses self::isBeforeOrEqual15th() Проверка текущей даты
      * 
-     * @return array Массив с данными периода редактирования
+     * @return array Массив с данными текущего периода
      */
-    public function getEditingPeriod(): array
+    public function getCurrentPeriod(): array
     {
-        $today = Carbon::now();
-        $isBefore15th = $this->isBeforeOrEqual15th();
+        return $this->withMetrics(__FUNCTION__, function () {
+            $today = Carbon::now();
+            $cacheKey = "billing:editing_period:" . $today->format('Y-m-d');
 
-        if ($isBefore15th) {
-            // До 15 числа - работаем с предыдущим месяцем
-            $activeStart = $this->firstOfMonth($today->copy()->subMonth());
-            $activeEnd = $this->lastOfMonth($today->copy()->subMonth());
-            $futureStart = $this->firstOfMonth($today);
-        } else {
-            // После 15 числа - работаем с текущим месяцем
-            $activeStart = $this->firstOfMonth($today);
-            $activeEnd = $this->lastOfMonth($today);
-            $futureStart = $this->firstOfMonth($today->copy()->addMonth());
-        }
+            $ttl = Carbon::now()->diffInSeconds(Carbon::now()->endOfDay());
 
-        return [
-            'is_before_15th' => $isBefore15th,
-            'active_start' => $activeStart,
-            'active_end' => $activeEnd,
-            'future_start' => $futureStart,
-            'previous_month_end' => $this->lastOfMonth($today->copy()->subMonth()),
-            'two_months_ago_end' => $this->lastOfMonth($today->copy()->subMonths(2)),
-        ];
+            return Cache::remember($cacheKey, $ttl, function () use ($today) {
+                Log::info('BillingPeriodService::getCurrentPeriod() calculating...');
+
+                $isBefore15th = $this->isBeforeOrEqual15th();
+
+                if ($isBefore15th) {
+                    $activeStart = $this->firstOfMonth($today->copy()->subMonth());
+                    $activeEnd = $this->lastOfMonth($today->copy()->subMonth());
+                    $futureStart = $this->firstOfMonth($today);
+                } else {
+                    $activeStart = $this->firstOfMonth($today);
+                    $activeEnd = $this->lastOfMonth($today);
+                    $futureStart = $this->firstOfMonth($today->copy()->addMonth());
+                }
+
+                return [
+                    'is_before_15th' => $isBefore15th,
+                    'active_start' => $activeStart,
+                    'active_end' => $activeEnd,
+                    'future_start' => $futureStart,
+                    'previous_month_end' => $this->lastOfMonth($today->copy()->subMonth()),
+                    'two_months_ago_end' => $this->lastOfMonth($today->copy()->subMonths(2)),
+                ];
+            });
+        });
     }
 
     /**
@@ -113,8 +128,10 @@ class BillingPeriodService
      */
     public function validateStartDate($date): bool
     {
-        $carbonDate = Carbon::parse($date);
-        return $carbonDate->day === 1;
+        return $this->withMetrics(__FUNCTION__, function () use ($date) {
+            $carbonDate = Carbon::parse($date);
+            return $carbonDate->day === 1;
+        });
     }
 
     /**
@@ -128,15 +145,17 @@ class BillingPeriodService
      */
     public function validateEndDate($date): bool
     {
-        $carbonDate = Carbon::parse($date);
-        return $carbonDate->isLastOfMonth();
+        return $this->withMetrics(__FUNCTION__, function () use ($date) {
+            $carbonDate = Carbon::parse($date);
+            return $carbonDate->isLastOfMonth();
+        });
     }
 
     /**
      * Получить допустимые даты для start_date (простой массив строк)
      * 
      * @see \App\Services\ServiceBusinessService::validateTariffStartDate() Используется для валидации
-     * @uses self::getEditingPeriod() Получение текущего периода
+     * @uses self::getCurrentPeriod() Получение текущего периода
      * @uses Carbon::now() Получение текущей даты
      * @uses Carbon::addMonths() Добавление месяцев
      * @uses Carbon::firstOfMonth() Получение первого дня месяца
@@ -145,62 +164,66 @@ class BillingPeriodService
      */
     public function getAllowedStartDates(): array
     {
-        $period = $this->getEditingPeriod();
-        $allowedDates = [];
+        return $this->withMetrics(__FUNCTION__, function () {
+            $period = $this->getCurrentPeriod();
+            $allowedDates = [];
 
-        if ($period['is_before_15th']) {
-            // До 15 числа: можно установить даты в прошлом, текущем и будущих месяцах
-            for ($i = -1; $i <= 12; $i++) {
-                $date = Carbon::now()->addMonths($i)->firstOfMonth();
-                $allowedDates[] = $date->format('Y-m-d');
+            if ($period['is_before_15th']) {
+                // До 15 числа: можно установить даты в прошлом, текущем и будущих месяцах
+                for ($i = -1; $i <= 12; $i++) {
+                    $date = Carbon::now()->addMonths($i)->firstOfMonth();
+                    $allowedDates[] = $date->format('Y-m-d');
+                }
+            } else {
+                // После 15 числа: можно установить даты в текущем и будущих месяцах
+                for ($i = 0; $i <= 12; $i++) {
+                    $date = Carbon::now()->addMonths($i)->firstOfMonth();
+                    $allowedDates[] = $date->format('Y-m-d');
+                }
             }
-        } else {
-            // После 15 числа: можно установить даты в текущем и будущих месяцах
-            for ($i = 0; $i <= 12; $i++) {
-                $date = Carbon::now()->addMonths($i)->firstOfMonth();
-                $allowedDates[] = $date->format('Y-m-d');
-            }
-        }
 
-        return $allowedDates;
+            return $allowedDates;
+        });
     }
 
     /**
      * Получить допустимые даты для start_date с понятными названиями
      * 
-     * @uses self::getEditingPeriod() Получение текущего периода
+     * @uses self::getCurrentPeriod() Получение текущего периода
      * @uses self::getMonthLabel() Формирование понятных названий
      * 
      * @return array Массив с данными дат и их labels
      */
     public function getAllowedStartDatesWithLabels(): array
     {
-        $period = $this->getEditingPeriod();
-        $allowedDates = [];
+        return $this->withMetrics(__FUNCTION__, function () {
+            $period = $this->getCurrentPeriod();
+            $allowedDates = [];
 
-        if ($period['is_before_15th']) {
-            // До 15 числа: можно установить даты в прошлом, текущем и будущих месяцах
-            for ($i = -12; $i <= 12; $i++) {
-                $date = Carbon::now()->addMonths($i)->firstOfMonth();
-                $label = $this->getMonthLabel($date, $i);
-                $allowedDates[] = [
-                    'value' => $date->format('Y-m-d'),
-                    'label' => $label
-                ];
+            if ($period['is_before_15th']) {
+                // До 15 числа: можно установить даты в прошлом, текущем и будущих месяцах
+                for ($i = -12; $i <= 12; $i++) {
+                    $date = Carbon::now()->addMonths($i)->firstOfMonth();
+                    $label = $this->getMonthLabel($date, $i);
+                    $allowedDates[] = [
+                        'value' => $date->format('Y-m-d'),
+                        'label' => $label
+                    ];
+                }
+            } else {
+                // После 15 числа: можно установить даты в текущем и будущих месяцах
+                for ($i = 0; $i <= 12; $i++) {
+                    $date = Carbon::now()->addMonths($i)->firstOfMonth();
+                    $label = $this->getMonthLabel($date, $i);
+                    $allowedDates[] = [
+                        'value' => $date->format('Y-m-d'),
+                        'label' => $label
+                    ];
+                }
             }
-        } else {
-            // После 15 числа: можно установить даты в текущем и будущих месяцах
-            for ($i = 0; $i <= 12; $i++) {
-                $date = Carbon::now()->addMonths($i)->firstOfMonth();
-                $label = $this->getMonthLabel($date, $i);
-                $allowedDates[] = [
-                    'value' => $date->format('Y-m-d'),
-                    'label' => $label
-                ];
-            }
-        }
 
-        return $allowedDates;
+            return $allowedDates;
+        });
     }
 
     /**
@@ -244,28 +267,30 @@ class BillingPeriodService
      * Получить примеры допустимых дат для отображения в ошибках
      * 
      * @see \App\Services\ServiceBusinessService::validateTariffStartDate() Используется в сообщениях об ошибках
-     * @uses self::getEditingPeriod() Получение текущего периода
+     * @uses self::getCurrentPeriod() Получение текущего периода
      * @uses Carbon::now() Получение текущей даты
      * 
      * @return array Массив примеров дат в формате d.m.Y
      */
     public function getDateExamples(): array
     {
-        $period = $this->getEditingPeriod();
-        $examples = [];
+        return $this->withMetrics(__FUNCTION__, function () {
+            $period = $this->getCurrentPeriod();
+            $examples = [];
 
-        if ($period['is_before_15th']) {
-            // Примеры для периода до 15 числа
-            $examples[] = Carbon::now()->subMonth()->firstOfMonth()->format('d.m.Y'); // прошлый месяц
-            $examples[] = Carbon::now()->firstOfMonth()->format('d.m.Y'); // текущий месяц
-            $examples[] = Carbon::now()->addMonth()->firstOfMonth()->format('d.m.Y'); // следующий месяц
-        } else {
-            // Примеры для периода после 15 числа
-            $examples[] = Carbon::now()->firstOfMonth()->format('d.m.Y'); // текущий месяц
-            $examples[] = Carbon::now()->addMonth()->firstOfMonth()->format('d.m.Y'); // следующий месяц
-            $examples[] = Carbon::now()->addMonths(2)->firstOfMonth()->format('d.m.Y'); // через месяц
-        }
+            if ($period['is_before_15th']) {
+                // Примеры для периода до 15 числа
+                $examples[] = Carbon::now()->subMonth()->firstOfMonth()->format('d.m.Y'); // прошлый месяц
+                $examples[] = Carbon::now()->firstOfMonth()->format('d.m.Y'); // текущий месяц
+                $examples[] = Carbon::now()->addMonth()->firstOfMonth()->format('d.m.Y'); // следующий месяц
+            } else {
+                // Примеры для периода после 15 числа
+                $examples[] = Carbon::now()->firstOfMonth()->format('d.m.Y'); // текущий месяц
+                $examples[] = Carbon::now()->addMonth()->firstOfMonth()->format('d.m.Y'); // следующий месяц
+                $examples[] = Carbon::now()->addMonths(2)->firstOfMonth()->format('d.m.Y'); // через месяц
+            }
 
-        return $examples;
+            return $examples;
+        });
     }
 }

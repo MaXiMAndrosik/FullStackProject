@@ -89,7 +89,7 @@ return [
             'handler_with' => [
                 'host' => env('PAPERTRAIL_URL'),
                 'port' => env('PAPERTRAIL_PORT'),
-                'connectionString' => 'tls://'.env('PAPERTRAIL_URL').':'.env('PAPERTRAIL_PORT'),
+                'connectionString' => 'tls://' . env('PAPERTRAIL_URL') . ':' . env('PAPERTRAIL_PORT'),
             ],
             'processors' => [PsrLogMessageProcessor::class],
         ],
@@ -126,12 +126,28 @@ return [
         'emergency' => [
             'path' => storage_path('logs/laravel.log'),
         ],
-        
+
         'frontend' => [
             'driver' => 'daily',
             'path' => storage_path('logs/frontend.log'),
             'level' => 'debug',
             'days' => 14,
+        ],
+
+        'services' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/services.log'),
+            'level' => env('LOG_SERVICES_LEVEL', 'debug'),
+            'days' => env('LOG_SERVICES_RETENTION', 7),
+            'formatter' => Monolog\Formatter\JsonFormatter::class,
+        ],
+
+        'services_metrics' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/services-metrics.log'),
+            'level' => env('LOG_SERVICES_METRICS_LEVEL', 'info'),
+            'days' => env('LOG_SERVICES_METRICS_RETENTION', 30),
+            'formatter' => Monolog\Formatter\JsonFormatter::class,
         ],
 
     ],

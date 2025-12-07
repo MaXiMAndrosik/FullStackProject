@@ -15,7 +15,10 @@ export const store = configureStore({
                 ],
                 ignoredPaths: ["auth.user"],
             },
-        }).concat(logger),
+        }).concat(
+            // process.env.NODE_ENV === "development" ? logger : []
+            process.env.REACT_APP_ENABLE_REDUX_LOGGER === 'true' ? logger : []
+        ),
 });
 
 store.subscribe(() => {
@@ -34,7 +37,7 @@ store.subscribe(() => {
     const state = store.getState();
 
     localStorage.setItem(
-        "auth_debug", 
+        "auth_debug",
         JSON.stringify({
             fullAuthState: state.auth, // Сохраняем ВСЕ данные из auth-слайса
             timestamp: new Date().toISOString(),
@@ -42,4 +45,4 @@ store.subscribe(() => {
     );
 });
 
-export default store; 
+export default store;

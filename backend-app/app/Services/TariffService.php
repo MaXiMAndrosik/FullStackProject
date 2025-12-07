@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Traits\CollectsMetrics;
 use App\Models\Tariff;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
@@ -15,16 +16,8 @@ use Illuminate\Support\Facades\Log;
  */
 class TariffService
 {
-    // public function getCurrentTariff($serviceId)
-    // {
-    //     return Tariff::where('service_id', $serviceId)
-    //         ->where(function ($query) {
-    //             $query->whereNull('end_date')
-    //                 ->orWhere('end_date', '>', now());
-    //         })
-    //         ->latest('start_date')
-    //         ->first();
-    // }
+
+    use CollectsMetrics;
 
     /**
      * Проверка возможности редактирования тарифа

@@ -10,24 +10,32 @@ use App\Helpers\FormatHelper;
 
 class CurrentTariffResource extends JsonResource
 {
+    protected $precomputedStatus;
+
+    /**
+     * Конструктор с поддержкой предварительно вычисленного статуса
+     */
+    public function __construct($resource, $precomputedStatus = null)
+    {
+        parent::__construct($resource);
+        $this->precomputedStatus = $precomputedStatus;
+    }
+
     public function toArray($request)
     {
-        $billingPeriodService = new BillingPeriodService();
-        $tariffStatusService = new TariffStatusService($billingPeriodService);
-
-        $status = $tariffStatusService->getStatus($this->resource);
+        $status = 'current';
         $formattedRate = FormatHelper::formatTariff($this->rate, $this->unit);
 
         return [
             'id' => $this->id,
-            'rate' => $this->rate,
+            // 'rate' => $this->rate,
             'formatted_rate' => $formattedRate,
-            'unit' => $this->unit,
+            // 'unit' => $this->unit,
             'start_date' => $this->start_date,
-            'end_date' => $this->end_date,
-            'status' => $status,
-            'is_current' => $status === 'current',
+            // 'end_date' => $this->end_date,
+            // 'status' => $status,
+            // 'can_edit' => $this->canEdit,
+            // 'is_current' => $status === 'current',
         ];
     }
-
 }

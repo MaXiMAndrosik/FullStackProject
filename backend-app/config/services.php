@@ -42,4 +42,13 @@ return [
         'lang' => env('WEATHER_LANG'),
     ],
 
+    'metrics' => [
+        'enabled' => env('SERVICE_METRICS_ENABLED', true),
+        'excluded_services' => [
+            // Добавляем список исключенных сервисов
+            // App\Services\UserService::class, // Пример
+        ],
+        'detailed_logging' => env('SERVICE_METRICS_DETAILED_LOGGING', false),
+    ],
+
 ];
